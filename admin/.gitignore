@@ -1,0 +1,9 @@
+/node_modules
+/.next
+/out
+/build
+# env files — real ones ignored, *.example templates tracked
+.env*
+!.env*.example
+*.tsbuildinfo
+next-env.d.ts

@@ -1,0 +1,69 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth";
+
+const NAV = [
+  { label: "Dashboard", href: "/dashboard", icon: "M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5" },
+  { label: "Products", href: "/products", icon: "M4 7h16l-1.2 13H5.2L4 7zM8.5 7V6a3.5 3.5 0 0 1 7 0v1" },
+  { label: "Categories", href: "/categories", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
+  { label: "Concerns", href: "/concerns", icon: "M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" },
+  { label: "Orders", href: "/orders", icon: "M6 7h12l1 13H5L6 7zM9 7V5a3 3 0 0 1 6 0v2" },
+  { label: "Reviews", href: "/reviews", icon: "M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5L12 3z" },
+  { label: "Settings", href: "/settings", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4L2.6 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1L9.5 21h5l.4-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z" },
+];
+
+export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname();
+  const { user, logout } = useAuth();
+
+  return (
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex items-center gap-2 px-5 h-16 border-b border-border">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+          Y
+        </span>
+        <span className="font-semibold">YugenBD Admin</span>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto p-3">
+        <ul className="space-y-1">
+          {NAV.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    active ? "bg-primary-light text-primary" : "text-foreground hover:bg-surface"
+                  }`}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d={item.icon} />
+                  </svg>
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="border-t border-border p-4">
+        <p className="text-xs text-muted truncate">{user?.email}</p>
+        <button
+          type="button"
+          onClick={logout}
+          className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 21H5V3h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}

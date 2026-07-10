@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+**/dist/
+**/.next/
+
+# Env files — NEVER commit real secrets. Only *.example templates are tracked.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs / PM2
+*.log
+.pm2/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db

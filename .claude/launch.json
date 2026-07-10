@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--prefix", "/home/faysal/Desktop/YugenBD/frontend"],
+      "port": 3000
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start", "--prefix", "/home/faysal/Desktop/YugenBD/admin"],
+      "port": 3001
+    }
+  ]
+}
