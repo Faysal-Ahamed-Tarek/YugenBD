@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, gte, ilike, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "../../db/client";
 import {
   products,
@@ -48,14 +49,35 @@ function buildFilters(
   }
 
   if (query.categorySlug) {
+    // Resolve the slug to a set of category ids: the category itself PLUS, when
+    // it's a top-level parent, all of its subcategories. So a parent slug lists
+    // everything under it (parent + children), while a subcategory slug lists
+    // just that child. `parentLookup` is the target category matched by slug;
+    // any category whose parentId points at it is one of its children.
+    const parentLookup = alias(categories, "parent_lookup");
+    const matchingCategoryIds = db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(
+        or(
+          eq(categories.slug, query.categorySlug),
+          inArray(
+            categories.parentId,
+            db
+              .select({ id: parentLookup.id })
+              .from(parentLookup)
+              .where(eq(parentLookup.slug, query.categorySlug))
+          )
+        )
+      );
+
     conditions.push(
       inArray(
         products.id,
         db
           .select({ id: productCategories.productId })
           .from(productCategories)
-          .innerJoin(categories, eq(productCategories.categoryId, categories.id))
-          .where(eq(categories.slug, query.categorySlug))
+          .where(inArray(productCategories.categoryId, matchingCategoryIds))
       )
     );
   }

@@ -9,8 +9,8 @@ import {
 } from "./category.validators";
 
 export async function listCategories(req: Request, res: Response) {
-  const { q } = listCategoriesQuerySchema.parse(req.query);
-  const categories = await categoryService.list(q);
+  const { q, flat } = listCategoriesQuerySchema.parse(req.query);
+  const categories = await categoryService.list({ q, flat });
   sendSuccess(res, categories);
 }
 

@@ -2,6 +2,13 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  // null = top-level; set = a subcategory. `children` holds the subcategories
+  // on top-level rows from the default (tree) GET /categories response, and on
+  // a single category fetched by slug when it is a parent. `parent` is present
+  // on a single subcategory fetched by slug (used for breadcrumbs).
+  parentId?: string | null;
+  children?: Category[];
+  parent?: Category | null;
   createdAt: string;
 }
 

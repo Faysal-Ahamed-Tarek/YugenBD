@@ -55,7 +55,12 @@ async function request<T>(path: string, opts: RequestOptions = {}, allowRetry = 
     credentials: "include",
   });
 
-  if (res.status === 401 && auth && allowRetry && refreshHandler) {
+  // The auth endpoints themselves must never trigger a refresh-retry: a 401
+  // from /auth/refresh would recurse infinitely (each retry firing another
+  // refresh), and a 401 from /auth/login is a real credential error, not an
+  // expired token. Only other authed endpoints refresh-and-retry once.
+  const isAuthEndpoint = path.startsWith("/auth/");
+  if (res.status === 401 && auth && allowRetry && refreshHandler && !isAuthEndpoint) {
     const newToken = await refreshHandler();
     if (newToken) {
       accessToken = newToken;

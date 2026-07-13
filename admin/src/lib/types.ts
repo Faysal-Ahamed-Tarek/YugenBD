@@ -25,7 +25,10 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  imageUrl: string | null;
+  // null = top-level category; set = a subcategory. `children` is present on
+  // top-level rows from the default (tree) GET /categories response.
+  parentId: string | null;
+  children?: Category[];
   createdAt: string;
 }
 

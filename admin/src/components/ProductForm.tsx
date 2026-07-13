@@ -312,7 +312,12 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
       <section className="rounded-2xl border border-border bg-background p-5 grid grid-cols-1 sm:grid-cols-2 gap-6">
         <CheckboxGroup
           label="Categories"
-          options={categories.map((c) => ({ id: c.id, label: c.name }))}
+          // Tree: each top-level category followed by its indented children.
+          // Parent and child are independently selectable (no auto-inherit).
+          options={categories.flatMap((c) => [
+            { id: c.id, label: c.name, depth: 0 },
+            ...(c.children ?? []).map((ch) => ({ id: ch.id, label: ch.name, depth: 1 })),
+          ])}
           selected={categoryIds}
           onToggle={(id) => setCategoryIds((s) => toggle(s, id))}
         />
@@ -408,7 +413,7 @@ function CheckboxGroup({
   onToggle,
 }: {
   label: string;
-  options: { id: string; label: string }[];
+  options: { id: string; label: string; depth?: number }[];
   selected: Set<string>;
   onToggle: (id: string) => void;
 }) {
@@ -417,13 +422,18 @@ function CheckboxGroup({
       <p className="text-sm font-medium mb-2">{label}</p>
       <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
         {options.map((opt) => (
-          <label key={opt.id} className="flex items-center gap-2.5 text-sm">
+          <label
+            key={opt.id}
+            className="flex items-center gap-2.5 text-sm"
+            style={{ paddingLeft: (opt.depth ?? 0) * 20 }}
+          >
             <input
               type="checkbox"
               checked={selected.has(opt.id)}
               onChange={() => onToggle(opt.id)}
               className="h-4 w-4 accent-primary"
             />
+            {opt.depth ? <span className="text-muted" aria-hidden>└</span> : null}
             {opt.label}
           </label>
         ))}

@@ -1,4 +1,5 @@
 import rateLimit, { type Options } from "express-rate-limit";
+import { env } from "../config/env";
 
 /** Shared 429 response in the project's error envelope. */
 const handler: Options["handler"] = (_req, res) => {
@@ -12,6 +13,11 @@ const base = {
   standardHeaders: true, // RateLimit-* headers
   legacyHeaders: false,
   handler,
+  // Rate limiting is a production concern. Skip it in development/test so local
+  // login and testing aren't throttled (the auth limiter's 5 logins/15min is
+  // otherwise painful while iterating). Production (NODE_ENV=production) keeps
+  // full protection.
+  skip: () => env.NODE_ENV !== "production",
 } satisfies Partial<Options>;
 
 /**

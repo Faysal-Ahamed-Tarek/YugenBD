@@ -74,8 +74,16 @@ export const addressesRelations = relations(addresses, ({ one }) => ({
   }),
 }));
 
-export const categoriesRelations = relations(categories, ({ many }) => ({
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
   productCategories: many(productCategories),
+  // Self-referencing tree (one level deep). `parent` is null for top-level
+  // categories; `children` holds the subcategories of a top-level category.
+  parent: one(categories, {
+    fields: [categories.parentId],
+    references: [categories.id],
+    relationName: "category_children",
+  }),
+  children: many(categories, { relationName: "category_children" }),
 }));
 
 export const productsRelations = relations(products, ({ many }) => ({

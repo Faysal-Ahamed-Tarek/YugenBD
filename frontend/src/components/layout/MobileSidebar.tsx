@@ -28,6 +28,14 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
   const [open, setOpen] = useState(false);
   const [categories, setCategories] = useState(initialCategories);
   const [status, setStatus] = useState<FetchStatus>("idle");
+  // Which top-level categories have their subcategory sub-list expanded.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   // Portal target exists only in the browser; render the panel after mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -146,20 +154,57 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
             </p>
           ) : (
             <ul className="space-y-1">
-              {categories.map((cat) => (
-                <li key={cat.id}>
-                  <Link
-                    href={`/category/${cat.slug}`}
-                    onClick={() => setOpen(false)}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-lg text-[15px] font-medium hover:bg-primary-light hover:text-primary transition-colors"
-                  >
-                    {cat.name}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M9 6l6 6-6 6" />
-                    </svg>
-                  </Link>
-                </li>
-              ))}
+              {categories.map((cat) => {
+                const children = cat.children ?? [];
+                const isExpanded = expanded.has(cat.id);
+                return (
+                  <li key={cat.id}>
+                    <div className="flex items-center">
+                      <Link
+                        href={`/category/${cat.slug}`}
+                        onClick={() => setOpen(false)}
+                        className="flex-1 py-2.5 px-3 rounded-lg text-[15px] font-medium hover:bg-primary-light hover:text-primary transition-colors"
+                      >
+                        {cat.name}
+                      </Link>
+                      {children.length > 0 ? (
+                        <button
+                          type="button"
+                          aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
+                          aria-expanded={isExpanded}
+                          onClick={() => toggleExpand(cat.id)}
+                          className="p-2.5 rounded-lg text-muted hover:bg-surface hover:text-primary transition-colors"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}>
+                            <path d="M6 9l6 6 6-6" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <span className="p-2.5 text-muted" aria-hidden>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 6l6 6-6 6" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                    {children.length > 0 && isExpanded && (
+                      <ul className="mt-0.5 mb-1 ml-4 border-l border-border pl-2 space-y-0.5">
+                        {children.map((child) => (
+                          <li key={child.id}>
+                            <Link
+                              href={`/category/${child.slug}`}
+                              onClick={() => setOpen(false)}
+                              className="block py-2 px-3 rounded-lg text-sm text-foreground hover:bg-primary-light hover:text-primary transition-colors"
+                            >
+                              {child.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </nav>

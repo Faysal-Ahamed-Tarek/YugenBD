@@ -61,19 +61,43 @@ export default async function Header() {
           </div>
         </div>
 
-        {/* Desktop category nav */}
+        {/* Desktop category nav. Categories with subcategories reveal a hover
+            flyout (pure CSS group-hover — no client JS). Items wrap instead of
+            scrolling so the absolute flyout is never clipped. */}
         <nav aria-label="Categories" className="hidden md:block border-t border-border">
-          <ul className="flex items-center gap-6 h-11 text-sm font-medium overflow-x-auto no-scrollbar">
-            {categories.map((cat) => (
-              <li key={cat.id} className="shrink-0">
-                <Link
-                  href={`/category/${cat.slug}`}
-                  className="text-foreground hover:text-primary transition-colors"
-                >
-                  {cat.name}
-                </Link>
-              </li>
-            ))}
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-0.5 min-h-11 py-0.5 text-sm font-medium">
+            {categories.map((cat) => {
+              const children = cat.children ?? [];
+              return (
+                <li key={cat.id} className="group relative shrink-0">
+                  <Link
+                    href={`/category/${cat.slug}`}
+                    className="inline-flex items-center gap-1 py-2.5 text-foreground hover:text-primary transition-colors"
+                  >
+                    {cat.name}
+                    {children.length > 0 && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-muted group-hover:text-primary transition-colors">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    )}
+                  </Link>
+                  {children.length > 0 && (
+                    <ul className="absolute left-0 top-full z-50 hidden min-w-44 rounded-xl border border-border bg-background p-1.5 shadow-lg group-hover:block">
+                      {children.map((child) => (
+                        <li key={child.id}>
+                          <Link
+                            href={`/category/${child.slug}`}
+                            className="block rounded-lg px-3 py-2 text-foreground hover:bg-primary-light hover:text-primary transition-colors"
+                          >
+                            {child.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </div>
