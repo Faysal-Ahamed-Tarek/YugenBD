@@ -11,6 +11,7 @@ import type {
   ProductsPage,
   Review,
   TestimonialVideo,
+  HeroSlide,
 } from "@/types";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000/api/v1";
@@ -48,6 +49,10 @@ async function apiGet<T>(path: string, revalidate = 300): Promise<T | null> {
 
 export async function getCategories(): Promise<Category[]> {
   return (await apiGet<Category[]>("/categories")) ?? [];
+}
+
+export async function getHeroSlides(): Promise<HeroSlide[]> {
+  return (await apiGet<HeroSlide[]>("/hero-slides")) ?? [];
 }
 
 export async function getProducts(params: ProductListParams = {}): Promise<Product[]> {

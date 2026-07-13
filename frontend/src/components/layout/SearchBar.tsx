@@ -1,10 +1,11 @@
 /**
- * Zero-JS search: a plain GET form that navigates to /search?q=…
- * Works before hydration and costs nothing in the bundle.
+ * Zero-JS search: a plain GET form that navigates to /products?q=…
+ * The Shop page (/products) handles search + filters, so there's no separate
+ * search results route. Works before hydration and costs nothing in the bundle.
  */
 export default function SearchBar({ autoFocus = false }: { autoFocus?: boolean }) {
   return (
-    <form action="/search" role="search" className="relative">
+    <form action="/products" role="search" className="relative">
       <input
         type="search"
         name="q"

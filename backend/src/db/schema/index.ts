@@ -8,4 +8,5 @@ export * from "./reviews";
 export * from "./testimonials";
 export * from "./concerns";
 export * from "./orders";
+export * from "./hero-slides";
 export * from "./relations";

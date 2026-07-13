@@ -1,23 +1,19 @@
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { orders, orderItems, products, productImages, productWeights } from "../../db/schema";
+import { orders, orderItems, products, productImages } from "../../db/schema";
 import type { ListOrdersQuery, OrderStatus } from "./order.validators";
 
 type NewOrder = typeof orders.$inferInsert;
 type NewOrderItem = typeof orderItems.$inferInsert;
 
-/** A stock bucket to decrement: a specific weight row, or product-level. */
+/** A product-level stock decrement. */
 export interface StockDecrement {
   productId: string;
-  weightId: string | null;
   quantity: number;
 }
 
 export const orderRepository = {
-  /**
-   * Look up the products referenced by an incoming order, with their weight
-   * variants, for price/stock checks and per-weight decrements.
-   */
+  /** Look up the products referenced by an incoming order for price/stock checks. */
   findProductsByIds(ids: string[]) {
     return db.query.products.findMany({
       where: inArray(products.id, ids),
@@ -28,11 +24,6 @@ export const orderRepository = {
         stock: true,
         basePrice: true,
         discountPrice: true,
-      },
-      with: {
-        weights: {
-          columns: { id: true, value: true, unit: true, stock: true, price: true },
-        },
       },
     });
   },
@@ -47,10 +38,9 @@ export const orderRepository = {
   },
 
   /**
-   * Insert an order and its items atomically, and decrement stock in the SAME
-   * transaction. Per-weight decrements hit product_weights.stock; product-level
-   * decrements hit products.stock. GREATEST(..., 0) clamps at zero so stock can
-   * never go negative even under a race. Returns the order with items.
+   * Insert an order and its items atomically, and decrement product stock in the
+   * SAME transaction. GREATEST(..., 0) clamps at zero so stock can never go
+   * negative even under a race. Returns the order with items.
    */
   async createWithItems(
     order: NewOrder,
@@ -65,17 +55,10 @@ export const orderRepository = {
         .returning();
 
       for (const dec of decrements) {
-        if (dec.weightId) {
-          await tx
-            .update(productWeights)
-            .set({ stock: sql`GREATEST(${productWeights.stock} - ${dec.quantity}, 0)` })
-            .where(eq(productWeights.id, dec.weightId));
-        } else {
-          await tx
-            .update(products)
-            .set({ stock: sql`GREATEST(${products.stock} - ${dec.quantity}, 0)` })
-            .where(eq(products.id, dec.productId));
-        }
+        await tx
+          .update(products)
+          .set({ stock: sql`GREATEST(${products.stock} - ${dec.quantity}, 0)` })
+          .where(eq(products.id, dec.productId));
       }
 
       return { ...created, items: rows };

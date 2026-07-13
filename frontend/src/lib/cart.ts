@@ -10,16 +10,10 @@ export interface CartItem {
   title: string;
   price: string;
   imageUrl: string | null;
-  weightLabel?: string | null;
   quantity: number;
 }
 
 const KEY = "yugenbd_cart";
-
-/** A cart line is unique per product + chosen weight variant. */
-function lineKey(productId: string, weightLabel?: string | null) {
-  return `${productId}::${weightLabel ?? ""}`;
-}
 
 export function getCart(): CartItem[] {
   if (typeof window === "undefined") return [];
@@ -41,8 +35,7 @@ function save(cart: CartItem[]): void {
 
 export function addToCart(item: Omit<CartItem, "quantity">, quantity = 1): void {
   const cart = getCart();
-  const key = lineKey(item.productId, item.weightLabel);
-  const existing = cart.find((i) => lineKey(i.productId, i.weightLabel) === key);
+  const existing = cart.find((i) => i.productId === item.productId);
   if (existing) {
     existing.quantity += quantity;
   } else {
@@ -52,18 +45,16 @@ export function addToCart(item: Omit<CartItem, "quantity">, quantity = 1): void 
 }
 
 /** Set a line's quantity to an exact value (clamped to >= 1). */
-export function setItemQuantity(productId: string, quantity: number, weightLabel?: string | null): void {
+export function setItemQuantity(productId: string, quantity: number): void {
   const cart = getCart();
-  const key = lineKey(productId, weightLabel);
-  const item = cart.find((i) => lineKey(i.productId, i.weightLabel) === key);
+  const item = cart.find((i) => i.productId === productId);
   if (!item) return;
   item.quantity = Math.max(1, Math.floor(quantity));
   save(cart);
 }
 
-export function removeFromCart(productId: string, weightLabel?: string | null): void {
-  const key = lineKey(productId, weightLabel);
-  save(getCart().filter((i) => lineKey(i.productId, i.weightLabel) !== key));
+export function removeFromCart(productId: string): void {
+  save(getCart().filter((i) => i.productId !== productId));
 }
 
 export function clearCart(): void {

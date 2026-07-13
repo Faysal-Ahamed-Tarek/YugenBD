@@ -8,15 +8,6 @@ const imageInputSchema = z.object({
   sortOrder: z.number().int().min(0).default(0),
 });
 
-const weightInputSchema = z.object({
-  value: z.number().positive(),
-  unit: z.enum(["ml", "g", "l", "kg", "pcs"]),
-  // Each weight is a sellable variant with its own stock + price.
-  stock: z.number().int().min(0).default(0),
-  price: z.number().positive().nullable().optional().default(null),
-  isDefault: z.boolean().default(false),
-});
-
 export const createProductSchema = z
   .object({
     title: z.string().trim().min(2).max(255),
@@ -31,7 +22,6 @@ export const createProductSchema = z
     status: z.enum(["draft", "published"]).default("draft"),
     categoryIds: z.array(z.string().uuid()).min(1, "At least one category is required"),
     concernIds: z.array(z.string().uuid()).optional().default([]),
-    weights: z.array(weightInputSchema).optional().default([]),
     images: z.array(imageInputSchema).optional().default([]),
   })
   .refine((data) => !data.discountPrice || data.discountPrice < data.basePrice, {
@@ -53,7 +43,6 @@ export const updateProductSchema = z
     status: z.enum(["draft", "published"]).optional(),
     categoryIds: z.array(z.string().uuid()).min(1).optional(),
     concernIds: z.array(z.string().uuid()).optional(),
-    weights: z.array(weightInputSchema).optional(),
   })
   .refine(
     (data) =>

@@ -8,7 +8,6 @@ const bdLocalPhone = /^01[3-9]\d{8}$/;
 const orderItemSchema = z.object({
   productId: z.string().uuid("Invalid product id"),
   quantity: z.number().int().min(1).max(99),
-  weightLabel: z.string().trim().max(50).optional(),
 });
 
 export const createOrderSchema = z

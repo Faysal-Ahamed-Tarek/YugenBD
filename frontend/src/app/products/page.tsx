@@ -23,12 +23,14 @@ function readFilters(sp: Record<string, string | string[] | undefined>): ActiveF
     concern: one(sp.concern),
     minPrice: one(sp.minPrice),
     maxPrice: one(sp.maxPrice),
+    q: one(sp.q),
   };
 }
 
 /** Build the API query params from URL filters. */
 function toQuery(filters: ActiveFilters): ProductListParams {
   const q: ProductListParams = { limit: PAGE_SIZE, page: 1 };
+  if (filters.q) q.search = filters.q;
   if (filters.category) q.categorySlug = filters.category;
   if (filters.concern) q.concernSlug = filters.concern;
   const min = filters.minPrice ? Number(filters.minPrice) : undefined;
@@ -74,6 +76,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
   };
 
   const chips: { key: keyof ActiveFilters; label: string }[] = [];
+  if (filters.q) chips.push({ key: "q", label: `Search: ${filters.q}` });
   if (filters.category) chips.push({ key: "category", label: catName ?? filters.category });
   if (filters.concern) chips.push({ key: "concern", label: conName ?? filters.concern });
   if (filters.minPrice) chips.push({ key: "minPrice", label: `Min ৳${filters.minPrice}` });
@@ -94,7 +97,11 @@ export default async function ProductsPage({ searchParams }: PageProps) {
       <div className="mt-4 flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold">
-            {chips.length > 0 ? "Filtered Products" : "Shop All Products"}
+            {filters.q
+              ? `Search results for “${filters.q}”`
+              : chips.length > 0
+                ? "Filtered Products"
+                : "Shop All Products"}
           </h1>
           <p className="mt-1 text-sm text-muted">
             {pagination.total} product{pagination.total === 1 ? "" : "s"}

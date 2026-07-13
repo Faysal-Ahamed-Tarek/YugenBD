@@ -26,24 +26,7 @@ export interface ProductCategoryRef {
   slug: string;
 }
 
-/**
- * Effective stock/price fields the API derives from weight variants. For a
- * product WITH weights: effectiveStock = sum of weight stocks, effectivePrice =
- * lowest weight price, effectiveDiscountPrice = null. Without weights they
- * mirror stock/basePrice/discountPrice. Prefer these over the raw fields for
- * storefront display (see product.pricing on the backend).
- */
-// Optional: older/cached API responses (e.g. a stale ISR entry served during a
-// deploy) may omit these. Consumers must fall back to base price/stock — use
-// resolveEffective() in lib/product.ts rather than reading these directly.
-export interface EffectiveFields {
-  hasWeights?: boolean;
-  effectiveStock?: number;
-  effectivePrice?: string;
-  effectiveDiscountPrice?: string | null;
-}
-
-export interface Product extends EffectiveFields {
+export interface Product {
   id: string;
   title: string;
   slug: string;
@@ -62,20 +45,15 @@ export interface Product extends EffectiveFields {
   categories: ProductCategoryRef[];
 }
 
-export interface ProductWeight {
+export interface HeroSlide {
   id: string;
-  value: string;
-  unit: string;
-  stock: number;
-  price: string | null;
-  isDefault: boolean;
+  imageUrl: string;
   sortOrder: number;
 }
 
 /** Detail endpoint shape: full image list instead of just the main image. */
 export interface ProductDetail extends Omit<Product, "mainImage"> {
   images: ProductImage[];
-  weights: ProductWeight[];
 }
 
 export interface Pagination {
@@ -161,7 +139,6 @@ export interface OrderItem {
   title: string;
   price: string;
   imageUrl: string | null;
-  weightLabel: string | null;
   quantity: number;
   isPreOrder: boolean;
 }
@@ -194,7 +171,7 @@ export interface CreateOrderPayload {
   paymentMethod: PaymentMethod;
   bkashTransactionId?: string;
   bkashAmount?: number;
-  items: Array<{ productId: string; quantity: number; weightLabel?: string }>;
+  items: Array<{ productId: string; quantity: number }>;
 }
 
 /** Lean shape served by GET /testimonials — only what the carousel renders. */

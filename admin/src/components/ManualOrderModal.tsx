@@ -15,24 +15,10 @@ const ZONES: { zone: "inside_dhaka" | "outside_dhaka"; label: string; fee: numbe
   { zone: "outside_dhaka", label: "Outside Dhaka (৳120, 2-3 days)", fee: 120 },
 ];
 
-interface Weight {
-  id: string;
-  value: string;
-  unit: string;
-  stock: number;
-  price: string | null;
-  isDefault: boolean;
-}
-interface DetailProduct extends Product {
-  weights?: Weight[];
-}
 interface Line {
-  product: DetailProduct;
+  product: Product;
   quantity: number;
-  weightLabel: string | null; // chosen "50ml" when the product has weights
 }
-
-const weightLabel = (w: Weight) => `${parseFloat(w.value)}${w.unit}`;
 
 /** Two-step manual order modal: pick products first, then customer details. */
 export default function ManualOrderModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -64,32 +50,14 @@ export default function ManualOrderModal({ onClose, onCreated }: { onClose: () =
     setSearch("");
     setResults([]);
     if (lines.some((l) => l.product.id === p.id)) return;
-    // Fetch detail to know if it has weight variants.
-    const detail = await api.get<DetailProduct>(`/products/${p.id}`);
-    const weights = detail.data.weights ?? [];
-    const def = weights.find((w) => w.isDefault) ?? weights[0];
-    setLines((prev) => [
-      ...prev,
-      { product: detail.data, quantity: 1, weightLabel: def ? weightLabel(def) : null },
-    ]);
+    setLines((prev) => [...prev, { product: p, quantity: 1 }]);
   };
 
   const setQty = (id: string, qty: number) =>
     setLines((prev) => prev.map((l) => (l.product.id === id ? { ...l, quantity: Math.max(1, qty) } : l)));
-  const setWeight = (id: string, label: string) =>
-    setLines((prev) => prev.map((l) => (l.product.id === id ? { ...l, weightLabel: label } : l)));
   const removeLine = (id: string) => setLines((prev) => prev.filter((l) => l.product.id !== id));
 
-  const unit = (p: Product) => parseFloat(p.discountPrice ?? p.basePrice);
-  // Weighted products price per selected weight; otherwise product price.
-  const linePrice = (l: Line) => {
-    const weights = l.product.weights ?? [];
-    if (weights.length > 0 && l.weightLabel) {
-      const w = weights.find((wt) => weightLabel(wt) === l.weightLabel);
-      if (w?.price != null) return parseFloat(w.price);
-    }
-    return unit(l.product);
-  };
+  const linePrice = (l: Line) => parseFloat(l.product.discountPrice ?? l.product.basePrice);
   const subtotal = useMemo(() => lines.reduce((s, l) => s + linePrice(l) * l.quantity, 0), [lines]);
   const selectedZone = ZONES.find((z) => z.zone === zone);
   const total = selectedZone ? subtotal + selectedZone.fee : null;
@@ -112,7 +80,6 @@ export default function ManualOrderModal({ onClose, onCreated }: { onClose: () =
         items: lines.map((l) => ({
           productId: l.product.id,
           quantity: l.quantity,
-          weightLabel: l.weightLabel ?? undefined,
         })),
       });
       onCreated();
@@ -144,7 +111,7 @@ export default function ManualOrderModal({ onClose, onCreated }: { onClose: () =
                       className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-surface"
                     >
                       <span>{p.title}</span>
-                      <span className="text-muted">{formatPrice(unit(p))}</span>
+                      <span className="text-muted">{formatPrice(parseFloat(p.discountPrice ?? p.basePrice))}</span>
                     </button>
                   </li>
                 ))}
@@ -172,19 +139,6 @@ export default function ManualOrderModal({ onClose, onCreated }: { onClose: () =
                       ×
                     </button>
                   </div>
-                  {(l.product.weights?.length ?? 0) > 0 && (
-                    <select
-                      value={l.weightLabel ?? ""}
-                      onChange={(e) => setWeight(l.product.id, e.target.value)}
-                      className="mt-1 h-8 rounded border border-border bg-surface px-2 text-xs outline-none focus:border-primary"
-                    >
-                      {l.product.weights!.map((w) => (
-                        <option key={w.id} value={weightLabel(w)}>
-                          {weightLabel(w)}
-                        </option>
-                      ))}
-                    </select>
-                  )}
                 </li>
               ))}
             </ul>

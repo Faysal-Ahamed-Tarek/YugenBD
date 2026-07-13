@@ -63,7 +63,6 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
               <span className="flex-1 text-sm">
                 <span className="line-clamp-1">
                   {item.title}
-                  {item.weightLabel && <span className="text-muted"> · {item.weightLabel}</span>}
                   {item.isPreOrder && (
                     <span className="ml-2 inline-block rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold text-white align-middle">
                       Pre-Order

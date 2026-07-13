@@ -7,28 +7,8 @@ import type { Category, Concern, Product } from "@/lib/types";
 import ImageUploader, { type EditableImage } from "@/components/ui/ImageUploader";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 
-type WeightUnit = "ml" | "g" | "l" | "kg" | "pcs";
-const WEIGHT_UNITS: WeightUnit[] = ["ml", "g", "l", "kg", "pcs"];
-
-interface WeightRow {
-  value: string;
-  unit: WeightUnit;
-  stock: string;
-  price: string;
-  isDefault: boolean;
-}
-
 interface DetailProduct extends Product {
   concerns?: { id: string; title: string; slug: string }[];
-  weights?: {
-    id: string;
-    value: string;
-    unit: WeightUnit;
-    stock: number;
-    price: string | null;
-    isDefault: boolean;
-    sortOrder: number;
-  }[];
 }
 
 export default function ProductForm({ initial }: { initial?: DetailProduct }) {
@@ -62,18 +42,6 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
       sortOrder: img.sortOrder,
     }))
   );
-  const [weights, setWeights] = useState<WeightRow[]>(
-    (initial?.weights ?? []).map((w) => ({
-      value: w.value,
-      unit: w.unit,
-      stock: String(w.stock ?? 0),
-      price: w.price ?? "",
-      isDefault: w.isDefault,
-    }))
-  );
-  // When weights exist, stock is tracked per-weight — the base stock is ignored.
-  const hasWeights = weights.length > 0;
-
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -81,15 +49,6 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
     api.get<Category[]>("/categories").then((r) => setCategories(r.data));
     api.get<Concern[]>("/concerns").then((r) => setConcerns(r.data));
   }, []);
-
-  const addWeight = () =>
-    setWeights((w) => [...w, { value: "", unit: "ml", stock: "0", price: "", isDefault: w.length === 0 }]);
-  const removeWeight = (index: number) =>
-    setWeights((w) => w.filter((_, i) => i !== index));
-  const updateWeight = (index: number, patch: Partial<WeightRow>) =>
-    setWeights((w) => w.map((row, i) => (i === index ? { ...row, ...patch } : row)));
-  const setDefaultWeight = (index: number) =>
-    setWeights((w) => w.map((row, i) => ({ ...row, isDefault: i === index })));
 
   const toggle = (set: Set<string>, id: string) => {
     const next = new Set(set);
@@ -122,37 +81,11 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
     if (discount != null && discount >= base) return setError("Discount price must be less than base price.");
     if (categoryIds.size === 0) return setError("Select at least one category.");
 
-    // Validate weight rows (if any): each is a sellable variant needing a
-    // positive amount and price, plus a non-negative stock.
-    const cleanWeights = weights
-      .filter((w) => w.value.trim() !== "")
-      .map((w) => ({
-        value: parseFloat(w.value),
-        unit: w.unit,
-        stock: parseInt(w.stock, 10) || 0,
-        price: w.price.trim() !== "" ? parseFloat(w.price) : null,
-        isDefault: w.isDefault,
-      }));
-    if (cleanWeights.some((w) => !w.value || w.value <= 0)) {
-      return setError("Each weight needs a positive amount.");
-    }
-    if (cleanWeights.some((w) => w.price == null || w.price <= 0)) {
-      return setError("Each weight needs a positive price.");
-    }
-    if (cleanWeights.some((w) => w.stock < 0)) {
-      return setError("Weight stock can't be negative.");
-    }
-    // Ensure exactly one default when weights exist.
-    if (cleanWeights.length > 0 && !cleanWeights.some((w) => w.isDefault)) {
-      cleanWeights[0].isDefault = true;
-    }
-
     const payload = {
       title: title.trim(),
       basePrice: base,
       discountPrice: discount,
-      // Base stock is ignored when per-weight variants exist.
-      stock: cleanWeights.length > 0 ? 0 : parseInt(stock, 10) || 0,
+      stock: parseInt(stock, 10) || 0,
       shortDescription: shortDescription || undefined,
       whoIsItBestFor: whoIsItBestFor || undefined,
       ingredients: ingredients || undefined,
@@ -161,7 +94,6 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
       status,
       categoryIds: [...categoryIds],
       concernIds: [...concernIds],
-      weights: cleanWeights,
     };
 
     setSubmitting(true);
@@ -189,14 +121,7 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Text label="Base price (৳)" value={basePrice} onChange={setBasePrice} type="number" required />
           <Text label="Discount price (৳)" value={discountPrice} onChange={setDiscountPrice} type="number" />
-          <Text
-            label="Stock"
-            value={hasWeights ? "" : stock}
-            onChange={setStock}
-            type="number"
-            disabled={hasWeights}
-            hint={hasWeights ? "Tracked per weight below" : undefined}
-          />
+          <Text label="Stock" value={stock} onChange={setStock} type="number" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1.5">Status</label>
@@ -220,93 +145,6 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
           onRefresh={refetchImages}
         />
         {isEdit && <p className="mt-2 text-xs text-muted">Image changes are saved immediately.</p>}
-      </section>
-
-      {/* Weight variants (optional) — each is a sellable variant with its own
-          stock + price. When present, the product-level stock is ignored. */}
-      <section className="rounded-2xl border border-border bg-background p-5">
-        <div className="mb-2 flex items-center justify-between">
-          <label className="block text-sm font-medium">Weights (optional)</label>
-          <button
-            type="button"
-            onClick={addWeight}
-            className="rounded-full border border-primary px-3 py-1 text-xs font-semibold text-primary hover:bg-primary hover:text-white transition-colors"
-          >
-            + Add weight
-          </button>
-        </div>
-        {weights.length === 0 ? (
-          <p className="text-xs text-muted">
-            No weight variants. Add rows (e.g. 50 ml, 100 ml) if this product is sold in
-            multiple sizes — each row carries its own stock and price, and customers must
-            pick one before ordering.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            <div className="hidden sm:grid grid-cols-[1fr_5rem_5rem_6rem_auto_auto] gap-2 text-xs font-medium text-muted">
-              <span>Amount</span>
-              <span>Unit</span>
-              <span>Stock</span>
-              <span>Price (৳)</span>
-              <span>Default</span>
-              <span></span>
-            </div>
-            {weights.map((w, i) => (
-              <div key={i} className="grid grid-cols-2 sm:grid-cols-[1fr_5rem_5rem_6rem_auto_auto] items-center gap-2">
-                <input
-                  type="number"
-                  step="any"
-                  min={0}
-                  value={w.value}
-                  onChange={(e) => updateWeight(i, { value: e.target.value })}
-                  placeholder="Amount"
-                  className="h-9 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary"
-                />
-                <select
-                  value={w.unit}
-                  onChange={(e) => updateWeight(i, { unit: e.target.value as WeightUnit })}
-                  className="h-9 rounded-lg border border-border bg-surface px-2 text-sm outline-none focus:border-primary"
-                >
-                  {WEIGHT_UNITS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min={0}
-                  value={w.stock}
-                  onChange={(e) => updateWeight(i, { stock: e.target.value })}
-                  placeholder="Stock"
-                  className="h-9 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary"
-                />
-                <input
-                  type="number"
-                  step="any"
-                  min={0}
-                  value={w.price}
-                  onChange={(e) => updateWeight(i, { price: e.target.value })}
-                  placeholder="Price"
-                  className="h-9 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary"
-                />
-                <label className="flex items-center gap-1.5 text-xs text-muted">
-                  <input
-                    type="radio"
-                    name="default-weight"
-                    checked={w.isDefault}
-                    onChange={() => setDefaultWeight(i)}
-                    className="accent-primary"
-                  />
-                  <span className="sm:hidden">Default</span>
-                </label>
-                <button type="button" onClick={() => removeWeight(i)} className="justify-self-end text-muted hover:text-red-600" aria-label="Remove weight">
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="rounded-2xl border border-border bg-background p-5 grid grid-cols-1 sm:grid-cols-2 gap-6">

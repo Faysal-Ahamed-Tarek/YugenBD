@@ -1,53 +1,30 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import type { ProductDetail, ProductWeight } from "@/types";
-import { formatPrice } from "@/lib/format";
-import { resolveEffective } from "@/lib/product";
+import { useState } from "react";
+import type { ProductDetail } from "@/types";
 import { addToCart } from "@/lib/cart";
 
 const WHATSAPP_NUMBER = "8801700000000"; // hotline number without "+"
-
-const weightLabelOf = (w: Pick<ProductWeight, "value" | "unit">) => `${parseFloat(w.value)}${w.unit}`;
 
 /**
  * Quantity selector + purchase actions. "Order Now" adds the chosen quantity to
  * the cart and heads to /cart; WhatsApp opens a prefilled chat.
  *
- * Pricing/stock are weight-aware (Part 2): when the product has weight variants,
- * the chosen weight's own price + stock apply. Zero available stock does NOT
- * disable ordering — it becomes a PRE-ORDER (Part 3c): the button stays enabled
- * with a "Pre-Order" label and an out-of-stock note.
+ * Zero available stock does NOT disable ordering — it becomes a PRE-ORDER: the
+ * button stays enabled with a "Pre-Order" label and an out-of-stock note.
  */
 export default function ProductActions({ product }: { product: ProductDetail }) {
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
 
-  const weights = product.weights ?? [];
-  const hasWeights = weights.length > 0;
-  const [selectedWeight, setSelectedWeight] = useState<string | null>(null);
-  const needsWeight = hasWeights && !selectedWeight;
+  const unitPrice =
+    product.discountPrice != null && parseFloat(product.discountPrice) < parseFloat(product.basePrice)
+      ? product.discountPrice
+      : product.basePrice;
+  const availableStock = product.stock;
 
-  const selected = useMemo(
-    () => (selectedWeight ? weights.find((w) => weightLabelOf(w) === selectedWeight) ?? null : null),
-    [selectedWeight, weights]
-  );
-
-  // Safe effective price/stock (falls back to base fields on older responses).
-  const { effectivePrice, effectiveDiscountPrice, effectiveStock } = resolveEffective(product);
-  const basePaidPrice = effectiveDiscountPrice ?? effectivePrice;
-
-  // Resolve the active variant's price + stock.
-  const unitPrice = hasWeights
-    ? selected?.price != null
-      ? selected.price
-      : basePaidPrice
-    : basePaidPrice;
-  const availableStock = hasWeights ? selected?.stock ?? 0 : effectiveStock;
-
-  // Pre-order once a concrete variant is known and its stock is exactly 0.
-  const isPreOrder = !needsWeight && availableStock === 0;
+  const isPreOrder = availableStock === 0;
   // Cap quantity at stock when in stock; pre-orders have no stock cap.
   const maxQty = availableStock > 0 ? availableStock : 99;
 
@@ -56,7 +33,6 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
   };
 
   const orderNow = () => {
-    if (needsWeight) return;
     addToCart(
       {
         productId: product.id,
@@ -64,7 +40,6 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
         title: product.title,
         price: unitPrice,
         imageUrl: product.images.find((img) => img.isMain)?.imageUrl ?? product.images[0]?.imageUrl ?? null,
-        weightLabel: selectedWeight,
       },
       quantity
     );
@@ -72,51 +47,11 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
   };
 
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Hi! I want to order: ${product.title}${selectedWeight ? ` (${selectedWeight})` : ""} (qty ${quantity})`
+    `Hi! I want to order: ${product.title} (qty ${quantity})`
   )}`;
 
   return (
     <div>
-      {/* Weight / size selector (required when the product has variants) */}
-      {hasWeights && (
-        <div className="mb-4">
-          <p className="text-sm font-semibold mb-2">
-            Size {needsWeight && <span className="text-primary font-normal">· please select</span>}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {weights.map((w) => {
-              const label = weightLabelOf(w);
-              const active = selectedWeight === label;
-              const soldOut = w.stock === 0;
-              return (
-                <button
-                  key={w.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedWeight(label);
-                    setQuantity(1);
-                  }}
-                  aria-pressed={active}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-                    active
-                      ? "border-primary bg-primary text-white"
-                      : "border-border hover:border-primary"
-                  }`}
-                >
-                  {label}
-                  {soldOut && <span className={active ? "text-white/80" : "text-muted"}> · pre-order</span>}
-                </button>
-              );
-            })}
-          </div>
-          {selected && (
-            <p className="mt-2 text-sm">
-              <span className="font-semibold text-foreground">{formatPrice(unitPrice)}</span>
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Pre-order notice */}
       {isPreOrder && (
         <div className="mb-4 rounded-lg border border-primary/40 bg-primary-light px-3 py-2.5 text-sm text-primary">
@@ -125,9 +60,9 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
       )}
 
       <p className="text-sm font-semibold mb-2">Quantity</p>
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Quantity box */}
-        <div className="inline-flex h-12 items-center rounded-full border border-border">
+      <div className="flex items-center gap-3">
+        {/* Quantity box — sized to its own content, never stretched */}
+        <div className="inline-flex h-12 shrink-0 items-center rounded-full border border-border">
           <button
             type="button"
             aria-label="Decrease quantity"
@@ -155,10 +90,9 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
         <button
           type="button"
           onClick={orderNow}
-          disabled={needsWeight}
-          className="h-12 flex-1 rounded-full bg-primary px-8 text-base font-semibold text-white hover:bg-primary-dark disabled:bg-surface disabled:text-muted disabled:cursor-not-allowed transition-colors"
+          className="h-12 flex-1 rounded-full bg-primary px-6 text-base font-semibold text-white hover:bg-primary-dark transition-colors"
         >
-          {needsWeight ? "Select a size" : isPreOrder ? "Pre-Order" : "Order Now"}
+          {isPreOrder ? "Pre-Order" : "Order Now"}
         </button>
       </div>
 

@@ -2,38 +2,32 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-interface Slide {
-  image: string;
-  alt: string;
-}
-
-const SLIDES: Slide[] = [
-  { image: "/manual-images/hero-1.jpg", alt: "Skincare collection — cash on delivery across Bangladesh" },
-  { image: "/manual-images/hero-2.jpg", alt: "Haircare essentials — up to 20% off this week" },
-  { image: "/manual-images/hero-3.jpg", alt: "Everyday makeup essentials" },
-  { image: "/manual-images/hero-4.jpg", alt: "Men's grooming collection" },
-];
+import type { HeroSlide } from "@/types";
 
 const AUTOPLAY_MS = 5000;
 
 /**
- * Image-only hero carousel inside a centered container. Native horizontal
- * scroll + CSS scroll-snap keeps swiping browser-native and library-free;
- * autoplay simply calls scrollTo() and pauses on hover/touch. The first
- * slide is the LCP image and loads with priority.
+ * Image-only hero carousel inside a centered container. Slides come from the
+ * admin-managed API (any number, 1..N). Native horizontal scroll + CSS
+ * scroll-snap keeps swiping browser-native and library-free; autoplay simply
+ * calls scrollTo() and pauses on hover/touch. The first slide is the LCP image
+ * and loads with priority. Renders nothing when there are no active slides.
  */
-export default function HeroSlider() {
+export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const pausedRef = useRef(false);
+  const count = slides.length;
 
-  const goTo = useCallback((index: number) => {
-    const track = trackRef.current;
-    if (!track) return;
-    const clamped = ((index % SLIDES.length) + SLIDES.length) % SLIDES.length;
-    track.scrollTo({ left: clamped * track.clientWidth, behavior: "smooth" });
-  }, []);
+  const goTo = useCallback(
+    (index: number) => {
+      const track = trackRef.current;
+      if (!track || count === 0) return;
+      const clamped = ((index % count) + count) % count;
+      track.scrollTo({ left: clamped * track.clientWidth, behavior: "smooth" });
+    },
+    [count]
+  );
 
   const onScroll = useCallback(() => {
     const track = trackRef.current;
@@ -42,6 +36,7 @@ export default function HeroSlider() {
   }, []);
 
   useEffect(() => {
+    if (count <= 1) return; // nothing to autoplay through
     const id = setInterval(() => {
       if (!pausedRef.current) {
         const track = trackRef.current;
@@ -51,7 +46,10 @@ export default function HeroSlider() {
       }
     }, AUTOPLAY_MS);
     return () => clearInterval(id);
-  }, [goTo]);
+  }, [goTo, count]);
+
+  // No active slides — hide the section entirely (don't render an empty shell).
+  if (count === 0) return null;
 
   return (
     <section aria-label="Featured offers" className="mx-auto max-w-7xl px-4 pt-4 md:pt-6">
@@ -65,14 +63,14 @@ export default function HeroSlider() {
           onTouchEnd={() => (pausedRef.current = false)}
           className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
         >
-          {SLIDES.map((slide, i) => (
+          {slides.map((slide, i) => (
             <div
-              key={slide.image}
+              key={slide.id}
               className="relative w-full shrink-0 snap-start aspect-[16/9] max-h-[440px] md:aspect-[21/8]"
             >
               <Image
-                src={slide.image}
-                alt={slide.alt}
+                src={slide.imageUrl}
+                alt={`Promotional banner ${i + 1}`}
                 fill
                 sizes="(max-width: 1280px) 100vw, 1248px"
                 priority={i === 0}
@@ -83,21 +81,23 @@ export default function HeroSlider() {
           ))}
         </div>
 
-        {/* Dot indicators */}
-        <div className="absolute bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-          {SLIDES.map((slide, i) => (
-            <button
-              key={slide.image}
-              type="button"
-              aria-label={`Go to slide ${i + 1}`}
-              aria-current={active === i}
-              onClick={() => goTo(i)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                active === i ? "w-6 bg-primary" : "w-2 bg-white/70 hover:bg-white"
-              }`}
-            />
-          ))}
-        </div>
+        {/* Dot indicators — only when there's more than one slide */}
+        {count > 1 && (
+          <div className="absolute bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {slides.map((slide, i) => (
+              <button
+                key={slide.id}
+                type="button"
+                aria-label={`Go to slide ${i + 1}`}
+                aria-current={active === i}
+                onClick={() => goTo(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  active === i ? "w-6 bg-primary" : "w-2 bg-white/70 hover:bg-white"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

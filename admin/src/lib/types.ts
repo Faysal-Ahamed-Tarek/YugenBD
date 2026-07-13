@@ -5,6 +5,26 @@ export interface AdminUser {
   role: "customer" | "admin";
 }
 
+export interface HeroSlide {
+  id: string;
+  imageUrl: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface TestimonialVideo {
+  id: string;
+  title: string;
+  description: string | null;
+  videoUrl: string;
+  posterUrl: string;
+  orderId: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Pagination {
   page: number;
   limit: number;
@@ -85,7 +105,6 @@ export interface OrderItem {
   title: string;
   price: string;
   imageUrl: string | null;
-  weightLabel: string | null;
   quantity: number;
   isPreOrder: boolean;
 }

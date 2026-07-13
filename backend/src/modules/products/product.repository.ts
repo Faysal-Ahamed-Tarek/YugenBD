@@ -5,22 +5,12 @@ import {
   products,
   productCategories,
   productImages,
-  productWeights,
   categories,
   productConcerns,
   concerns,
   orderItems,
 } from "../../db/schema";
-
-type WeightInput = {
-  value: number;
-  unit: "ml" | "g" | "l" | "kg" | "pcs";
-  stock: number;
-  price: number | null;
-  isDefault: boolean;
-};
 import type { ListProductsQuery } from "./product.validators";
-import { deriveEffective } from "./product.pricing";
 
 type ProductRow = typeof products.$inferSelect;
 
@@ -132,7 +122,7 @@ async function attachRelations(rows: ProductRow[]) {
   if (rows.length === 0) return [];
   const ids = rows.map((row) => row.id);
 
-  const [images, categoryLinks, weightRows] = await Promise.all([
+  const [images, categoryLinks] = await Promise.all([
     db
       .select()
       .from(productImages)
@@ -147,10 +137,6 @@ async function attachRelations(rows: ProductRow[]) {
       .from(productCategories)
       .innerJoin(categories, eq(productCategories.categoryId, categories.id))
       .where(inArray(productCategories.productId, ids)),
-    db
-      .select({ productId: productWeights.productId, stock: productWeights.stock, price: productWeights.price })
-      .from(productWeights)
-      .where(inArray(productWeights.productId, ids)),
   ]);
 
   const imageByProduct = new Map(images.map((img) => [img.productId, img]));
@@ -160,19 +146,11 @@ async function attachRelations(rows: ProductRow[]) {
     list.push({ id: link.categoryId, name: link.categoryName, slug: link.categorySlug });
     categoriesByProduct.set(link.productId, list);
   }
-  const weightsByProduct = new Map<string, Array<{ stock: number; price: string | null }>>();
-  for (const w of weightRows) {
-    const list = weightsByProduct.get(w.productId) ?? [];
-    list.push({ stock: w.stock, price: w.price });
-    weightsByProduct.set(w.productId, list);
-  }
 
   return rows.map((row) => ({
     ...row,
     mainImage: imageByProduct.get(row.id) ?? null,
     categories: categoriesByProduct.get(row.id) ?? [],
-    // Effective stock/price account for weight variants (see product.pricing).
-    ...deriveEffective(row, weightsByProduct.get(row.id)),
   }));
 }
 
@@ -202,7 +180,6 @@ export const productRepository = {
       where: eq(products.id, id),
       with: {
         images: { orderBy: asc(productImages.sortOrder) },
-        weights: { orderBy: asc(productWeights.sortOrder) },
         productCategories: { with: { category: true } },
         productConcerns: { with: { concern: true } },
       },
@@ -214,7 +191,6 @@ export const productRepository = {
       where: eq(products.slug, slug),
       with: {
         images: { orderBy: asc(productImages.sortOrder) },
-        weights: { orderBy: asc(productWeights.sortOrder) },
         productCategories: { with: { category: true } },
         productConcerns: { with: { concern: true } },
       },
@@ -233,8 +209,7 @@ export const productRepository = {
     values: typeof products.$inferInsert,
     categoryIds: string[],
     concernIds: string[],
-    images: Array<{ imageUrl: string; isMain: boolean; sortOrder: number }>,
-    weights: WeightInput[]
+    images: Array<{ imageUrl: string; isMain: boolean; sortOrder: number }>
   ) {
     return db.transaction(async (tx) => {
       const [product] = await tx.insert(products).values(values).returning();
@@ -255,20 +230,6 @@ export const productRepository = {
         );
       }
 
-      if (weights.length > 0) {
-        await tx.insert(productWeights).values(
-          weights.map((w, i) => ({
-            productId: product.id,
-            value: w.value.toString(),
-            unit: w.unit,
-            stock: w.stock,
-            price: w.price != null ? w.price.toFixed(2) : null,
-            isDefault: w.isDefault,
-            sortOrder: i,
-          }))
-        );
-      }
-
       return product;
     });
   },
@@ -277,8 +238,7 @@ export const productRepository = {
     id: string,
     values: Partial<typeof products.$inferInsert>,
     categoryIds?: string[],
-    concernIds?: string[],
-    weights?: WeightInput[]
+    concernIds?: string[]
   ) {
     return db.transaction(async (tx) => {
       const [product] = await tx
@@ -300,23 +260,6 @@ export const productRepository = {
           await tx
             .insert(productConcerns)
             .values(concernIds.map((concernId) => ({ productId: id, concernId })));
-        }
-      }
-
-      if (weights) {
-        await tx.delete(productWeights).where(eq(productWeights.productId, id));
-        if (weights.length > 0) {
-          await tx.insert(productWeights).values(
-            weights.map((w, i) => ({
-              productId: id,
-              value: w.value.toString(),
-              unit: w.unit,
-              stock: w.stock,
-              price: w.price != null ? w.price.toFixed(2) : null,
-              isDefault: w.isDefault,
-              sortOrder: i,
-            }))
-          );
         }
       }
 

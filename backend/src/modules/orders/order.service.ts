@@ -17,47 +17,11 @@ function money(value: number) {
   return value.toFixed(2);
 }
 
-/** Canonical weight label, matching the storefront/admin: `50ml`, `1.5kg`. */
-function weightLabelOf(weight: { value: string; unit: string }) {
-  return `${parseFloat(weight.value)}${weight.unit}`;
-}
-
-type ProductWithWeights = Awaited<ReturnType<typeof orderRepository.findProductsByIds>>[number];
-
-/** Effective (paid) unit price for a product with no weight variants. */
+/** Effective (paid) unit price: discount when it undercuts base, else base. */
 function productPrice(product: { basePrice: string; discountPrice: string | null }) {
   return product.discountPrice != null && Number(product.discountPrice) < Number(product.basePrice)
     ? Number(product.discountPrice)
     : Number(product.basePrice);
-}
-
-/**
- * Resolve a submitted line item against the catalog, returning the
- * authoritative unit price, the stock bucket it draws from (product-level or a
- * specific weight row), and how many units are available.
- *
- * Weighted products track stock + price PER WEIGHT: the product-level stock and
- * base/discount price are ignored. A weight must be chosen for such products.
- */
-function resolveVariant(
-  product: ProductWithWeights,
-  weightLabel: string | undefined
-): { unitPrice: number; availableStock: number; weightId: string | null } {
-  const weights = product.weights ?? [];
-
-  if (weights.length > 0) {
-    if (!weightLabel) {
-      throw ApiError.badRequest(`Please choose a size for "${product.title}".`);
-    }
-    const match = weights.find((w) => weightLabelOf(w) === weightLabel);
-    if (!match) {
-      throw ApiError.badRequest(`"${weightLabel}" is not a valid size for "${product.title}".`);
-    }
-    const unitPrice = match.price != null ? Number(match.price) : productPrice(product);
-    return { unitPrice, availableStock: match.stock, weightId: match.id };
-  }
-
-  return { unitPrice: productPrice(product), availableStock: product.stock, weightId: null };
 }
 
 /**
@@ -85,8 +49,8 @@ async function buildAndInsertOrder(
     if (!product || product.status !== "published") {
       throw ApiError.badRequest(`A product in the order is no longer available.`);
     }
-    const variant = resolveVariant(product, item.weightLabel);
-    const bucketKey = `${product.id}::${variant.weightId ?? ""}`;
+    const variant = { unitPrice: productPrice(product), availableStock: product.stock };
+    const bucketKey = product.id;
     requestedByBucket.set(bucketKey, (requestedByBucket.get(bucketKey) ?? 0) + item.quantity);
     return { item, product, variant, bucketKey };
   });
@@ -108,7 +72,6 @@ async function buildAndInsertOrder(
     title: product.title,
     price: money(variant.unitPrice),
     imageUrl: mainImages.get(product.id) ?? null,
-    weightLabel: item.weightLabel ?? null,
     quantity: item.quantity,
     isPreOrder: preOrderBuckets.has(bucketKey),
     lineTotal: variant.unitPrice * item.quantity,
@@ -121,13 +84,10 @@ async function buildAndInsertOrder(
   const isBkash = input.paymentMethod === "bkash";
 
   // Stock decrements: skip pre-order buckets (stock already 0). One entry per
-  // bucket with the total quantity to subtract.
+  // product with the total quantity to subtract.
   const decrements = [...requestedByBucket.entries()]
-    .filter(([key]) => !preOrderBuckets.has(key))
-    .map(([key, quantity]) => {
-      const [productId, weightId] = key.split("::");
-      return { productId, weightId: weightId || null, quantity };
-    });
+    .filter(([productId]) => !preOrderBuckets.has(productId))
+    .map(([productId, quantity]) => ({ productId, quantity }));
 
   return orderRepository.createWithItems(
     {

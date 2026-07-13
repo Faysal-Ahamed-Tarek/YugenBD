@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Product } from "@/types";
 import { formatPrice } from "@/lib/format";
-import { resolveEffective } from "@/lib/product";
 import ProductImage from "./ProductImage";
 import AddToCartButton from "./AddToCartButton";
 
@@ -10,21 +9,15 @@ import AddToCartButton from "./AddToCartButton";
  * HTML. Only the image fallback and cart button hydrate on the client.
  */
 export default function ProductCard({ product }: { product: Product }) {
-  // Effective price/stock are weight-aware (see product.pricing on the backend):
-  // for a weighted product effectivePrice is the lowest weight price and
-  // effectiveDiscountPrice is null; otherwise they mirror base/discount/stock.
-  // resolveEffective falls back to base fields for older/cached responses.
-  const { hasWeights, effectivePrice, effectiveDiscountPrice, effectiveStock } =
-    resolveEffective(product);
+  const { basePrice, discountPrice, stock } = product;
   const hasDiscount =
-    effectiveDiscountPrice !== null &&
-    parseFloat(effectiveDiscountPrice) < parseFloat(effectivePrice);
+    discountPrice !== null && parseFloat(discountPrice) < parseFloat(basePrice);
 
   const discountPercent = hasDiscount
-    ? Math.round((1 - parseFloat(effectiveDiscountPrice as string) / parseFloat(effectivePrice)) * 100)
+    ? Math.round((1 - parseFloat(discountPrice as string) / parseFloat(basePrice)) * 100)
     : 0;
 
-  const isPreOrder = effectiveStock <= 0;
+  const isPreOrder = stock <= 0;
 
   return (
     <article className="group flex flex-col rounded-xl border border-border bg-background overflow-hidden hover:shadow-lg hover:border-primary/40 transition-all duration-300">
@@ -56,17 +49,16 @@ export default function ProductCard({ product }: { product: Product }) {
         </h3>
 
         <p className="mt-1.5 mb-3 flex items-baseline gap-2">
-          {hasWeights && <span className="text-xs font-medium text-muted">From</span>}
           {hasDiscount ? (
             <>
               <span className="text-base font-semibold text-primary">
-                {formatPrice(effectiveDiscountPrice as string)}
+                {formatPrice(discountPrice as string)}
               </span>
-              <s className="text-sm text-muted">{formatPrice(effectivePrice)}</s>
+              <s className="text-sm text-muted">{formatPrice(basePrice)}</s>
             </>
           ) : (
             <span className="text-base font-semibold text-primary">
-              {formatPrice(effectivePrice)}
+              {formatPrice(basePrice)}
             </span>
           )}
         </p>

@@ -3,7 +3,7 @@ import { divisions, districts, upazilas } from "./locations";
 import { users } from "./users";
 import { addresses } from "./addresses";
 import { categories } from "./categories";
-import { products, productCategories, productImages, productWeights } from "./products";
+import { products, productCategories, productImages } from "./products";
 import { reviews, reviewImages } from "./reviews";
 import { concerns, productConcerns } from "./concerns";
 import { orders, orderItems } from "./orders";
@@ -90,15 +90,7 @@ export const productsRelations = relations(products, ({ many }) => ({
   productCategories: many(productCategories),
   productConcerns: many(productConcerns),
   images: many(productImages),
-  weights: many(productWeights),
   reviews: many(reviews),
-}));
-
-export const productWeightsRelations = relations(productWeights, ({ one }) => ({
-  product: one(products, {
-    fields: [productWeights.productId],
-    references: [products.id],
-  }),
 }));
 
 export const concernsRelations = relations(concerns, ({ many }) => ({

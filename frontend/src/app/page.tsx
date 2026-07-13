@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getProducts, getConcerns } from "@/lib/api";
+import { getProducts, getConcerns, getHeroSlides } from "@/lib/api";
 import type { Product } from "@/types";
 import HeroSlider from "@/components/home/HeroSlider";
 import ShopByConcern from "@/components/home/ShopByConcern";
@@ -77,12 +77,13 @@ function buildJsonLd(newArrivals: Product[]) {
 export default async function HomePage() {
   // All sections fetched in parallel on the server; the page is served as
   // static HTML with 5-minute ISR revalidation.
-  const [newArrivals, skincare, haircare, makeup, concerns] = await Promise.all([
+  const [newArrivals, skincare, haircare, makeup, concerns, heroSlides] = await Promise.all([
     getProducts({ sort: "newest", limit: 8 }),
     getProducts({ categorySlug: "skincare", limit: 8 }),
     getProducts({ categorySlug: "haircare", limit: 8 }),
     getProducts({ categorySlug: "makeup", limit: 8 }),
     getConcerns(),
+    getHeroSlides(),
   ]);
 
   const jsonLd = buildJsonLd(newArrivals);
@@ -98,7 +99,7 @@ export default async function HomePage() {
         YugenBD — Beauty &amp; Personal Care with Cash on Delivery in Bangladesh
       </h1>
 
-      <HeroSlider />
+      <HeroSlider slides={heroSlides} />
 
       <ShopByConcern concerns={concerns} />
 

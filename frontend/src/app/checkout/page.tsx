@@ -98,7 +98,6 @@ export default function CheckoutPage() {
       items: items.map((i) => ({
         productId: i.productId,
         quantity: i.quantity,
-        weightLabel: i.weightLabel ?? undefined,
       })),
     });
     if (result.ok && result.order) {
@@ -256,14 +255,13 @@ export default function CheckoutPage() {
 
             <ul className="mt-4 space-y-3">
               {items.map((item) => (
-                <li key={`${item.productId}-${item.weightLabel ?? ""}`} className="flex gap-3">
+                <li key={item.productId} className="flex gap-3">
                   <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface">
                     <ProductImage src={item.imageUrl} alt={item.title} sizes="56px" />
                   </span>
                   <span className="flex-1 text-sm">
                     <span className="line-clamp-1">
                       {item.title}
-                      {item.weightLabel && <span className="text-muted"> · {item.weightLabel}</span>}
                     </span>
                     <span className="text-muted">Qty {item.quantity}</span>
                   </span>

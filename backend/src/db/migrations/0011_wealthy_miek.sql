@@ -1,0 +1,1 @@
+ALTER TABLE "product_weights" ADD COLUMN "name_override" text;

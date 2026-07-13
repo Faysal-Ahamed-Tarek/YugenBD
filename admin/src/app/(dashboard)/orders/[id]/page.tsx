@@ -181,7 +181,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <div>
                         <p className="font-medium">
                           {item.title}
-                          {item.weightLabel && <span className="text-muted"> · {item.weightLabel}</span>}
                         </p>
                         {item.isPreOrder && (
                           <span className="mt-0.5 inline-block rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold text-white">

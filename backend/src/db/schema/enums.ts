@@ -10,7 +10,6 @@ export const orderStatusEnum = pgEnum("order_status", [
   "cancelled",
 ]);
 export const deliveryZoneEnum = pgEnum("delivery_zone", ["inside_dhaka", "outside_dhaka"]);
-export const weightUnitEnum = pgEnum("weight_unit", ["ml", "g", "l", "kg", "pcs"]);
 // bKash here means manual "Send Money" reference entry only (customer-typed
 // transaction id/amount), never a payment gateway integration.
 export const paymentMethodEnum = pgEnum("payment_method", ["bkash", "cod"]);

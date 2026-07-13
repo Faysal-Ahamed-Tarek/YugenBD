@@ -44,7 +44,6 @@ export const orderItems = pgTable(
     title: varchar("title", { length: 255 }).notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     imageUrl: varchar("image_url", { length: 500 }),
-    weightLabel: varchar("weight_label", { length: 50 }),
     quantity: integer("quantity").notNull(),
     // True when the product/weight had 0 stock at order time — the order is
     // still accepted (pre-order) and ships when restocked. See Part 3c.

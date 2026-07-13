@@ -9,7 +9,9 @@ const SHOW_AFTER_SCROLL_PX = 120;
 
 interface NavItem {
   label: string;
-  href: string;
+  href?: string;
+  // Non-navigation action rendered as a button instead of a link.
+  action?: "scrollTop";
   icon: React.ReactNode;
 }
 
@@ -46,22 +48,21 @@ const ITEMS: NavItem[] = [
     ),
   },
   {
-    label: "Search",
-    href: "/search",
-    icon: (
-      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-        <circle cx="11" cy="11" r="7" />
-        <path d="M20 20l-3.5-3.5" />
-      </svg>
-    ),
-  },
-  {
     label: "Account",
     href: "/account",
     icon: (
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="12" cy="8" r="4" />
         <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Top",
+    action: "scrollTop",
+    icon: (
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 19V5M5 12l7-7 7 7" />
       </svg>
     ),
   },
@@ -100,26 +101,38 @@ export default function BottomNav() {
     >
       <ul className="flex items-stretch justify-around">
         {ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = Boolean(item.href) && pathname === item.href;
+          const inner = (
+            <>
+              <span className="relative">
+                {item.icon}
+                {item.label === "Cart" && cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-0.5 inline-flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-semibold leading-none">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </span>
+              {item.label}
+            </>
+          );
+          const className = `relative flex w-full flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+            isActive ? "text-primary" : "text-muted hover:text-primary"
+          }`;
           return (
-            <li key={item.href} className="flex-1">
-              <Link
-                href={item.href}
-                aria-current={isActive ? "page" : undefined}
-                className={`relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
-                  isActive ? "text-primary" : "text-muted hover:text-primary"
-                }`}
-              >
-                <span className="relative">
-                  {item.icon}
-                  {item.label === "Cart" && cartCount > 0 && (
-                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-0.5 inline-flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-semibold leading-none">
-                      {cartCount > 99 ? "99+" : cartCount}
-                    </span>
-                  )}
-                </span>
-                {item.label}
-              </Link>
+            <li key={item.label} className="flex-1">
+              {item.action === "scrollTop" ? (
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className={className}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <Link href={item.href!} aria-current={isActive ? "page" : undefined} className={className}>
+                  {inner}
+                </Link>
+              )}
             </li>
           );
         })}

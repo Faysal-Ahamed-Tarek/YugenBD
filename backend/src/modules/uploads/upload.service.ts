@@ -2,11 +2,12 @@ import { cloudinary } from "../../config/cloudinary";
 
 export function uploadBufferToCloudinary(
   buffer: Buffer,
-  folder: string
+  folder: string,
+  resourceType: "image" | "video" = "image"
 ): Promise<{ url: string; publicId: string }> {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: "image" },
+      { folder, resource_type: resourceType },
       (error, result) => {
         if (error || !result) {
           reject(error ?? new Error("Cloudinary upload failed"));

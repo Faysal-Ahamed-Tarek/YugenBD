@@ -86,7 +86,7 @@ export function streamOrderPdf(order: Order, stream: NodeJS.WritableStream) {
   for (const item of order.items) {
     const rowY = doc.y;
     const lineTotal = parseFloat(item.price) * item.quantity;
-    let label = item.weightLabel ? `${item.title} (${item.weightLabel})` : item.title;
+    let label = item.title;
     if (item.isPreOrder) label += "  [PRE-ORDER]";
     doc.text(label, cols.title, rowY, { width: 260 });
     doc.text(String(item.quantity), cols.qty, rowY);

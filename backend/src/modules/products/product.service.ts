@@ -4,7 +4,6 @@ import { categories, productImages, products } from "../../db/schema";
 import { ApiError } from "../../utils/ApiError";
 import { generateUniqueSlug } from "../../utils/slug";
 import { productRepository } from "./product.repository";
-import { deriveEffective } from "./product.pricing";
 import type { CreateProductInput, ListProductsQuery, UpdateProductInput } from "./product.validators";
 
 async function assertCategoriesExist(categoryIds: string[]) {
@@ -32,8 +31,6 @@ function normalizeDetail(product: DetailRow) {
   const { productCategories: catJoins, productConcerns: conJoins, ...rest } = product;
   return {
     ...rest,
-    // Effective stock/price account for weight variants (see product.pricing).
-    ...deriveEffective(rest, rest.weights),
     categories: catJoins.map((join) => ({
       id: join.category.id,
       name: join.category.name,
@@ -104,8 +101,7 @@ export const productService = {
       },
       input.categoryIds,
       input.concernIds,
-      input.images,
-      input.weights
+      input.images
     );
 
     return productRepository.findById(product.id);
@@ -163,8 +159,7 @@ export const productService = {
         ...(input.status ? { status: input.status } : {}),
       },
       input.categoryIds,
-      input.concernIds,
-      input.weights
+      input.concernIds
     );
 
     return productRepository.findById(id);

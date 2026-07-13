@@ -11,7 +11,7 @@ import {
   boolean,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import { productStatusEnum, weightUnitEnum } from "./enums";
+import { productStatusEnum } from "./enums";
 import { categories } from "./categories";
 
 export const products = pgTable(
@@ -67,32 +67,5 @@ export const productImages = pgTable(
   },
   (table) => ({
     productIdx: index("product_images_product_id_idx").on(table.productId),
-  })
-);
-
-// Weight/size variants (e.g. 50ml, 100g). Each row is now a fully sellable
-// variant carrying its OWN stock + price. When a product has any weight rows,
-// the product-level `stock` and `basePrice`/`discountPrice` are IGNORED for
-// derivation — effective stock = SUM(weights.stock) and the storefront price
-// is the lowest weight price (see product.service getEffectiveStockAndPrice).
-// `price` is nullable only so legacy rows survive the migration; the admin
-// form requires it for every weight going forward, falling back to the
-// product base price when absent.
-export const productWeights = pgTable(
-  "product_weights",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    productId: uuid("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-    value: numeric("value", { precision: 10, scale: 2 }).notNull(),
-    unit: weightUnitEnum("unit").notNull(),
-    stock: integer("stock").notNull().default(0),
-    price: numeric("price", { precision: 10, scale: 2 }),
-    sortOrder: integer("sort_order").notNull().default(0),
-    isDefault: boolean("is_default").notNull().default(false),
-  },
-  (table) => ({
-    productIdx: index("product_weights_product_id_idx").on(table.productId),
   })
 );

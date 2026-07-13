@@ -9,7 +9,6 @@ import ProductActions from "@/components/product/ProductActions";
 import ProductAccordion, { type AccordionSection } from "@/components/product/ProductAccordion";
 import ReviewsSection from "@/components/product/ReviewsSection";
 import { sanitizeHtml, hasContent } from "@/lib/sanitize";
-import { resolveEffective } from "@/lib/product";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -48,9 +47,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 function buildJsonLd(product: ProductDetail) {
-  // Effective price/stock account for weight variants (see product.pricing),
-  // with a safe fallback to base fields for older/cached responses.
-  const { effectivePrice, effectiveDiscountPrice, effectiveStock } = resolveEffective(product);
+  const paidPrice =
+    product.discountPrice != null && parseFloat(product.discountPrice) < parseFloat(product.basePrice)
+      ? product.discountPrice
+      : product.basePrice;
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -61,11 +61,9 @@ function buildJsonLd(product: ProductDetail) {
     offers: {
       "@type": "Offer",
       priceCurrency: "BDT",
-      price: effectiveDiscountPrice ?? effectivePrice,
+      price: paidPrice,
       availability:
-        effectiveStock > 0
-          ? "https://schema.org/InStock"
-          : "https://schema.org/PreOrder",
+        product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
       url: `${SITE_URL}/product/${product.slug}`,
     },
   };
@@ -76,19 +74,13 @@ export default async function ProductPage({ params }: PageProps) {
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  // Use effective price/stock so weighted products show their derived values
-  // (lowest weight price, summed stock). resolveEffective falls back to the
-  // base fields if the response omits them — see product.pricing on the backend.
-  const { hasWeights, effectivePrice, effectiveDiscountPrice } = resolveEffective(product);
-  const displayPrice = effectiveDiscountPrice ?? effectivePrice;
+  const { basePrice, discountPrice } = product;
+  const displayPrice = discountPrice ?? basePrice;
   const hasDiscount =
-    effectiveDiscountPrice !== null &&
-    parseFloat(effectiveDiscountPrice) < parseFloat(effectivePrice);
-  const savings = hasDiscount
-    ? parseFloat(effectivePrice) - parseFloat(effectiveDiscountPrice as string)
-    : 0;
+    discountPrice !== null && parseFloat(discountPrice) < parseFloat(basePrice);
+  const savings = hasDiscount ? parseFloat(basePrice) - parseFloat(discountPrice as string) : 0;
   const discountPercent = hasDiscount
-    ? Math.round((savings / parseFloat(effectivePrice)) * 100)
+    ? Math.round((savings / parseFloat(basePrice)) * 100)
     : 0;
 
   const primaryCategory = product.categories[0];
@@ -150,17 +142,14 @@ export default async function ProductPage({ params }: PageProps) {
             </ul>
           )}
 
-          {/* Price — "From" prefix for weighted products (lowest weight price) */}
+          {/* Price */}
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            {hasWeights && (
-              <span className="text-sm font-medium text-muted">From</span>
-            )}
             <span className="text-2xl md:text-3xl font-bold text-foreground">
               {formatPrice(displayPrice)}
             </span>
             {hasDiscount && (
               <>
-                <s className="text-lg text-muted">{formatPrice(effectivePrice)}</s>
+                <s className="text-lg text-muted">{formatPrice(basePrice)}</s>
                 <span className="rounded-md bg-primary px-2 py-1 text-xs font-bold text-white">
                   SAVE {formatPrice(savings)} ({discountPercent}%)
                 </span>

@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { api } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
@@ -13,7 +12,6 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 const PLACEHOLDER = "/placeholder.svg";
 
 export default function ProductsPage() {
-  const router = useRouter();
   const [toDelete, setToDelete] = useState<Product | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -32,7 +30,12 @@ export default function ProductsPage() {
           <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-surface">
             <Image src={p.mainImage?.imageUrl ?? PLACEHOLDER} alt="" fill sizes="44px" className="object-cover" />
           </span>
-          <span className="font-medium">{p.title}</span>
+          <Link
+            href={`/products/${p.id}/edit`}
+            className="font-medium text-foreground hover:text-primary hover:underline transition-colors"
+          >
+            {p.title}
+          </Link>
         </div>
       ),
     },
@@ -71,7 +74,6 @@ export default function ProductsPage() {
         getRowKey={(p) => p.id}
         searchPlaceholder="Search products by title…"
         reloadKey={reloadKey}
-        onEdit={(p) => router.push(`/products/${p.id}/edit`)}
         onDelete={(p) => setToDelete(p)}
       />
 

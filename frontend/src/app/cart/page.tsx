@@ -82,9 +82,8 @@ export default function CartPage() {
           {items.map((item) => {
             const max = stock[item.productId];
             const atMax = max !== undefined && item.quantity >= max;
-            const rowKey = `${item.productId}::${item.weightLabel ?? ""}`;
             return (
-              <li key={rowKey} className="flex gap-4 py-4">
+              <li key={item.productId} className="flex gap-4 py-4">
                 <Link
                   href={`/product/${item.slug}`}
                   className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-surface"
@@ -99,14 +98,11 @@ export default function CartPage() {
                       className="text-sm font-medium leading-snug hover:text-primary transition-colors line-clamp-2"
                     >
                       {item.title}
-                      {item.weightLabel && (
-                        <span className="ml-1 text-xs text-muted">· {item.weightLabel}</span>
-                      )}
                     </Link>
                     <button
                       type="button"
                       aria-label={`Remove ${item.title}`}
-                      onClick={() => removeFromCart(item.productId, item.weightLabel)}
+                      onClick={() => removeFromCart(item.productId)}
                       className="p-1 text-muted hover:text-primary transition-colors"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -122,7 +118,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         aria-label="Decrease quantity"
-                        onClick={() => setItemQuantity(item.productId, item.quantity - 1, item.weightLabel)}
+                        onClick={() => setItemQuantity(item.productId, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                         className="h-9 w-9 text-lg text-muted hover:text-primary disabled:opacity-40 transition-colors"
                       >
@@ -132,7 +128,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         aria-label="Increase quantity"
-                        onClick={() => setItemQuantity(item.productId, item.quantity + 1, item.weightLabel)}
+                        onClick={() => setItemQuantity(item.productId, item.quantity + 1)}
                         disabled={atMax}
                         className="h-9 w-9 text-lg text-muted hover:text-primary disabled:opacity-40 transition-colors"
                       >

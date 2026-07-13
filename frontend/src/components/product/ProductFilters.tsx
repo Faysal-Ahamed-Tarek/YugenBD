@@ -9,6 +9,9 @@ export interface ActiveFilters {
   concern?: string;
   minPrice?: string;
   maxPrice?: string;
+  // Free-text search term (from the header search bar → /products?q=…). Not a
+  // sidebar control, but carried through so applying a filter keeps the search.
+  q?: string;
 }
 
 /**
@@ -36,6 +39,8 @@ export default function ProductFilters({
 
   const apply = () => {
     const qs = new URLSearchParams();
+    // Preserve an active search term when applying filters.
+    if (current.q) qs.set("q", current.q);
     if (category) qs.set("category", category);
     if (concern) qs.set("concern", concern);
     if (minPrice.trim()) qs.set("minPrice", minPrice.trim());

@@ -20,6 +20,7 @@ export default function ShopByConcern({ concerns }: { concerns: Concern[] }) {
       <Carousel
         label="Shop by Concern"
         itemColsClass="auto-cols-[calc(33.333%-8px)] md:auto-cols-[calc(16.666%-14px)]"
+        mobileArrows
       >
         {items.map((concern) => (
           <li key={concern.id} className="snap-start list-none">

@@ -15,6 +15,7 @@ import adminReviewRoutes from "./modules/reviews/review.admin.routes";
 import orderRoutes from "./modules/orders/order.routes";
 import authRoutes from "./modules/auth/auth.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
+import heroSlideRoutes from "./modules/hero-slides/hero-slide.routes";
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/uploads", uploadRoutes);
 app.use("/api/v1/testimonials", testimonialRoutes);
+app.use("/api/v1/hero-slides", heroSlideRoutes);
 app.use("/api/v1/concerns", concernRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/admin/reviews", adminReviewRoutes);
