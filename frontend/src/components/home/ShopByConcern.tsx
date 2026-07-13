@@ -6,11 +6,11 @@ import ProductImage from "@/components/product/ProductImage";
 /**
  * Server component: "Shop by Concern" cards — concern image + title, each
  * linking to its concern listing page. 3 cards per view on mobile, 6 on
- * desktop, on the shared scroll-snap Carousel shell. Only concerns with at
- * least one published product are shown.
+ * desktop, on the shared scroll-snap Carousel shell. Every concern is shown
+ * regardless of whether it has any linked products.
  */
 export default function ShopByConcern({ concerns }: { concerns: Concern[] }) {
-  const items = concerns.filter((concern) => concern.product !== null);
+  const items = concerns;
   if (items.length === 0) return null;
 
   return (
@@ -28,11 +28,12 @@ export default function ShopByConcern({ concerns }: { concerns: Concern[] }) {
               className="group block text-center"
               aria-label={`Shop products for ${concern.title}`}
             >
-              <span className="relative block aspect-square overflow-hidden rounded-full bg-surface ring-1 ring-border group-hover:ring-primary transition-all">
+              <span className="relative block aspect-square overflow-hidden rounded-xl bg-surface border border-border group-hover:border-primary transition-all">
                 <ProductImage
                   src={concern.imageUrl}
                   alt={concern.title}
                   sizes="(max-width: 768px) 33vw, 200px"
+                  fit="contain"
                 />
               </span>
               <span className="mt-2.5 block text-xs md:text-sm font-medium leading-snug group-hover:text-primary transition-colors">

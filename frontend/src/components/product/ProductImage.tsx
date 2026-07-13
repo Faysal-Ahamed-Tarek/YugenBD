@@ -14,11 +14,15 @@ export default function ProductImage({
   alt,
   sizes = "(max-width: 768px) 50vw, 25vw",
   priority = false,
+  fit = "cover",
 }: {
   src: string | null;
   alt: string;
   sizes?: string;
   priority?: boolean;
+  // "cover" crops to fill the box (default, product cards); "contain" shows the
+  // whole image with no cropping (used for concern cards).
+  fit?: "cover" | "contain";
 }) {
   const [failed, setFailed] = useState(false);
   const url = !src || failed ? PLACEHOLDER : src;
@@ -32,7 +36,7 @@ export default function ProductImage({
       priority={priority}
       loading={priority ? undefined : "lazy"}
       onError={() => setFailed(true)}
-      className="object-cover transition-transform duration-300 group-hover:scale-105"
+      className={`${fit === "contain" ? "object-contain" : "object-cover"} transition-transform duration-300 group-hover:scale-105`}
     />
   );
 }
