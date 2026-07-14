@@ -33,7 +33,8 @@ function productPrice(product: { basePrice: string; discountPrice: string | null
  */
 async function buildAndInsertOrder(
   input: Omit<CreateManualOrderInput, "status">,
-  status: OrderStatus = "pending"
+  status: OrderStatus = "pending",
+  userId: string | null = null
 ) {
   const productIds = [...new Set(input.items.map((item) => item.productId))];
   const found = await orderRepository.findProductsByIds(productIds);
@@ -91,6 +92,7 @@ async function buildAndInsertOrder(
 
   return orderRepository.createWithItems(
     {
+      userId,
       fullName: input.fullName,
       phone: input.phone,
       address: input.address,
@@ -111,8 +113,14 @@ async function buildAndInsertOrder(
 }
 
 export const orderService = {
-  create(input: CreateOrderInput) {
-    return buildAndInsertOrder(input, "pending");
+  // `userId` links the order to the logged-in customer (null for guests).
+  create(input: CreateOrderInput, userId: string | null = null) {
+    return buildAndInsertOrder(input, "pending", userId);
+  },
+
+  /** Order history for a logged-in customer, newest first. */
+  listByUser(userId: string) {
+    return orderRepository.findByUser(userId);
   },
 
   /** Admin manual order — same pricing integrity, plus an admin-set status. */

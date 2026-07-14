@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, uniqueIndex, index, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, integer, timestamp, uniqueIndex, index, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 export const categories = pgTable(
   "categories",
@@ -13,6 +13,9 @@ export const categories = pgTable(
     parentId: uuid("parent_id").references((): AnyPgColumn => categories.id, {
       onDelete: "restrict",
     }),
+    // Manual display order (lower first), mirroring concerns. Applied to both
+    // top-level categories and, within a parent, its subcategories.
+    sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({

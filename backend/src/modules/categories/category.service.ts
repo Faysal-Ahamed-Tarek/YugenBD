@@ -46,6 +46,7 @@ export const categoryService = {
       name: input.name,
       slug,
       parentId: input.parentId ?? null,
+      sortOrder: input.sortOrder ?? 0,
     });
   },
 
@@ -78,6 +79,7 @@ export const categoryService = {
       ...(input.name ? { name: input.name } : {}),
       ...(slug ? { slug } : {}),
       ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
+      ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     });
     return updated;
   },

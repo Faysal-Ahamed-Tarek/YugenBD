@@ -2,21 +2,28 @@ import { eq, ilike, sql, asc } from "drizzle-orm";
 import { db } from "../../db/client";
 import { categories, productCategories } from "../../db/schema";
 
-type CategoryValues = { name?: string; slug?: string; parentId?: string | null };
+type CategoryValues = { name?: string; slug?: string; parentId?: string | null; sortOrder?: number };
 
 export const categoryRepository = {
   findAll(q?: string) {
     const where = q ? ilike(categories.name, `%${q}%`) : undefined;
-    return db.select().from(categories).where(where).orderBy(categories.name);
+    return db
+      .select()
+      .from(categories)
+      .where(where)
+      .orderBy(asc(categories.sortOrder), asc(categories.name));
   },
 
   /**
    * Nested tree: top-level categories (parentId = null) each with a `children`
    * array of their subcategories. Built from a single table scan in memory —
-   * no N+1. Both levels are name-sorted.
+   * no N+1. Both levels are ordered by sortOrder, then name as a tiebreak.
    */
   async findTree() {
-    const all = await db.select().from(categories).orderBy(asc(categories.name));
+    const all = await db
+      .select()
+      .from(categories)
+      .orderBy(asc(categories.sortOrder), asc(categories.name));
     const childrenByParent = new Map<string, typeof all>();
     for (const c of all) {
       if (c.parentId) {
@@ -60,7 +67,7 @@ export const categoryRepository = {
     });
   },
 
-  create(values: { name: string; slug: string; parentId?: string | null }) {
+  create(values: { name: string; slug: string; parentId?: string | null; sortOrder?: number }) {
     return db.insert(categories).values(values).returning().then((rows) => rows[0]);
   },
 

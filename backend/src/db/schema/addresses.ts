@@ -19,6 +19,8 @@ export const addresses = pgTable(
     upazilaId: uuid("upazila_id")
       .notNull()
       .references(() => upazilas.id),
+    // Delivery contact number (Bangladeshi local format 01XXXXXXXXX).
+    phone: varchar("phone", { length: 20 }),
     unionOrArea: varchar("union_or_area", { length: 150 }),
     postOffice: varchar("post_office", { length: 100 }),
     postalCode: varchar("postal_code", { length: 4 }),

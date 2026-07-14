@@ -20,12 +20,12 @@ export default async function Header() {
           {/* Logo */}
           <Link href="/" className="shrink-0" aria-label="YugenBD home">
             <Image
-              src="/manual-images/logo.svg"
+              src="/manual-images/YugenBdTransparent.png"
               alt="YugenBD"
               width={132}
               height={32}
               priority
-              className="h-7 md:h-8 w-auto"
+              className="h-10 md:h-10 w-auto"
             />
           </Link>
 
@@ -34,29 +34,39 @@ export default async function Header() {
             <SearchBar />
           </div>
 
-          {/* Right actions — desktop order: Shop, Cart, Account */}
-          <div className="flex items-center gap-1 md:gap-2">
+          {/* Right actions — desktop shows icon-over-label (matches the mobile
+              bottom bar): All Products, Cart, Account. */}
+          <div className="flex items-center gap-1 md:gap-5">
+            {/* All Products — grid icon (distinct from the cart) */}
             <Link
               href="/products"
-              aria-label="Shop all products"
-              className="hidden md:inline-flex p-2 rounded-full text-foreground hover:text-primary hover:bg-primary-light transition-colors"
+              aria-label="All products"
+              className="hidden md:flex flex-col items-center gap-0.5 text-[11px] font-medium text-foreground hover:text-primary transition-colors"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M4 7h16l-1.2 13H5.2L4 7z" />
-                <path d="M8.5 7V6a3.5 3.5 0 0 1 7 0v1" />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
               </svg>
+              All Products
             </Link>
+
             <CartButton />
+
+            {/* Account */}
             <Link
               href="/account"
-              aria-label="My account"
-              className="hidden md:inline-flex p-2 rounded-full text-foreground hover:text-primary hover:bg-primary-light transition-colors"
+              aria-label="Account"
+              className="hidden md:flex flex-col items-center gap-0.5 text-[11px] font-medium text-foreground hover:text-primary transition-colors"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
               </svg>
+              Account
             </Link>
+
             <MobileSidebar categories={categories} />
           </div>
         </div>

@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { requireAuth, requireRole } from "../../middleware/auth";
+import { requireAuth, requireRole, optionalAuth } from "../../middleware/auth";
 import { orderCreateLimiter, orderReadLimiter } from "../../middleware/rateLimit";
 import {
   createOrder,
   getOrder,
   getOrderPdf,
   listOrders,
+  listMyOrders,
   createManualOrder,
   updateOrderStatus,
   updatePaymentStatus,
@@ -14,8 +15,12 @@ import {
 
 const router = Router();
 
-// Customer (public) order placement — rate limited.
-router.post("/", orderCreateLimiter, asyncHandler(createOrder));
+// Customer order placement — rate limited. optionalAuth links the order to the
+// signed-in customer (guests can still order).
+router.post("/", orderCreateLimiter, optionalAuth, asyncHandler(createOrder));
+
+// A customer's own order history (declared before /:id so it isn't shadowed).
+router.get("/mine", requireAuth, asyncHandler(listMyOrders));
 
 // Admin-only management routes (declared before /:id so they aren't shadowed).
 router.get("/", requireAuth, requireRole("admin"), asyncHandler(listOrders));

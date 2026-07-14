@@ -13,8 +13,14 @@ import { streamOrderPdf } from "./order.pdf";
 
 export async function createOrder(req: Request, res: Response) {
   const input = createOrderSchema.parse(req.body);
-  const order = await orderService.create(input);
+  // optionalAuth: link the order to the customer when they're signed in.
+  const order = await orderService.create(input, req.user?.userId ?? null);
   sendSuccess(res, order, 201);
+}
+
+export async function listMyOrders(req: Request, res: Response) {
+  const orders = await orderService.listByUser(req.user!.userId);
+  sendSuccess(res, orders);
 }
 
 export async function listOrders(req: Request, res: Response) {

@@ -61,6 +61,7 @@ export default function CategoriesPage() {
       ),
     },
     { header: "Slug", cell: (c) => <span className="text-muted">{c.slug}</span> },
+    { header: "Order", cell: (c) => <span className="text-muted">{c.sortOrder}</span> },
     {
       header: "Type",
       cell: (c) => (
@@ -139,6 +140,7 @@ function CategoryModal({
   const [parentId, setParentId] = useState<string | null>(
     state.mode === "create" ? state.parentId : (editing?.parentId ?? null)
   );
+  const [sortOrder, setSortOrder] = useState(String(editing?.sortOrder ?? 0));
   const [topLevel, setTopLevel] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -156,7 +158,7 @@ function CategoryModal({
     if (name.trim().length < 2) return setError("Name is required.");
     setSaving(true);
     try {
-      const body = { name: name.trim(), parentId };
+      const body = { name: name.trim(), parentId, sortOrder: parseInt(sortOrder, 10) || 0 };
       if (editing) await api.patch(`/categories/${editing.id}`, body);
       else await api.post("/categories", body);
       onSaved();
@@ -195,6 +197,17 @@ function CategoryModal({
           <p className="mt-1 text-xs text-muted">
             Choose a parent to make this a subcategory (one level deep only).
           </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Sort order</label>
+          <input
+            type="number"
+            min={0}
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            className="w-24 h-10 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary"
+          />
+          <p className="mt-1 text-xs text-muted">Lower numbers appear first (applies within its level).</p>
         </div>
         {error && <p className="rounded-lg bg-primary-light px-3 py-2 text-sm text-primary">{error}</p>}
         <div className="flex justify-end gap-3">

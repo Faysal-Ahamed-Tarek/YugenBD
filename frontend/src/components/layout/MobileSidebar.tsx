@@ -113,13 +113,16 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
           >
         {/* Top bar: logo + close */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <Image
-            src="/manual-images/logo.svg"
-            alt="YugenBD"
-            width={132}
-            height={32}
-            className="h-7 w-auto"
-          />
+          <Link href="/" className="shrink-0" aria-label="YugenBD home">
+            <Image
+              src="/manual-images/YugenBdTransparent.png"
+              alt="YugenBD"
+              width={132}
+              height={32}
+              priority
+              className="h-10 md:h-10 w-auto"
+            />
+          </Link>
           <button
             type="button"
             aria-label="Close menu"

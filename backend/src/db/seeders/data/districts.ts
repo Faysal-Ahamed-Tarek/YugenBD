@@ -1,5 +1,5 @@
 export const districtsData: Record<string, string[]> = {
-  Dhaka: [
+  "Dhaka": [
     "Dhaka",
     "Faridpur",
     "Gazipur",
@@ -14,20 +14,20 @@ export const districtsData: Record<string, string[]> = {
     "Shariatpur",
     "Tangail",
   ],
-  Chattogram: [
+  "Chattagram": [
     "Bandarban",
     "Brahmanbaria",
     "Chandpur",
     "Chattogram",
-    "Cumilla",
-    "Cox's Bazar",
+    "Comilla",
+    "Coxsbazar",
     "Feni",
     "Khagrachhari",
     "Lakshmipur",
     "Noakhali",
     "Rangamati",
   ],
-  Rajshahi: [
+  "Rajshahi": [
     "Bogura",
     "Chapainawabganj",
     "Joypurhat",
@@ -37,7 +37,7 @@ export const districtsData: Record<string, string[]> = {
     "Rajshahi",
     "Sirajganj",
   ],
-  Khulna: [
+  "Khulna": [
     "Bagerhat",
     "Chuadanga",
     "Jashore",
@@ -49,9 +49,21 @@ export const districtsData: Record<string, string[]> = {
     "Narail",
     "Satkhira",
   ],
-  Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
-  Sylhet: ["Habiganj", "Moulvibazar", "Sunamganj", "Sylhet"],
-  Rangpur: [
+  "Barisal": [
+    "Barguna",
+    "Barisal",
+    "Bhola",
+    "Jhalakathi",
+    "Patuakhali",
+    "Pirojpur",
+  ],
+  "Sylhet": [
+    "Habiganj",
+    "Moulvibazar",
+    "Sunamganj",
+    "Sylhet",
+  ],
+  "Rangpur": [
     "Dinajpur",
     "Gaibandha",
     "Kurigram",
@@ -61,5 +73,10 @@ export const districtsData: Record<string, string[]> = {
     "Rangpur",
     "Thakurgaon",
   ],
-  Mymensingh: ["Jamalpur", "Mymensingh", "Netrokona", "Sherpur"],
+  "Mymensingh": [
+    "Jamalpur",
+    "Mymensingh",
+    "Netrokona",
+    "Sherpur",
+  ],
 };

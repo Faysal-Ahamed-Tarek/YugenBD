@@ -18,16 +18,18 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="lg:col-span-2">
+            <Link href="/" className="shrink-0" aria-label="YugenBD home">
             <Image
-              src="/manual-images/logo.svg"
+              src="/manual-images/YugenBdTransparent.png"
               alt="YugenBD"
               width={132}
               height={32}
-              className="h-8 w-auto"
+              priority
+              className="h-10 md:h-15 w-auto"
             />
+          </Link>
             <p className="mt-3 max-w-sm text-sm text-muted leading-relaxed">
-              Authentic beauty and personal care, delivered across all 64 districts of
-              Bangladesh. Order online, pay cash on delivery — no advance needed.
+              every products is authentically sourced from japan with care and intention. we hope these j-beauty essentials bring a little more radiance to your everyday routine.
             </p>
           </div>
 

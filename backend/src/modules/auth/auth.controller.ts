@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { sendSuccess } from "../../utils/apiResponse";
 import { authService } from "./auth.service";
-import { loginSchema, changePasswordSchema } from "./auth.validators";
+import { loginSchema, registerSchema, customerLoginSchema, changePasswordSchema } from "./auth.validators";
 import { REFRESH_COOKIE, refreshCookieOptions } from "./auth.tokens";
 
 export async function login(req: Request, res: Response) {
@@ -9,6 +9,25 @@ export async function login(req: Request, res: Response) {
   const { user, accessToken, refreshToken } = await authService.login(input);
   res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
   sendSuccess(res, { user, accessToken });
+}
+
+export async function register(req: Request, res: Response) {
+  const input = registerSchema.parse(req.body);
+  const { user, accessToken, refreshToken } = await authService.registerCustomer(input);
+  res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
+  sendSuccess(res, { user, accessToken }, 201);
+}
+
+export async function customerLogin(req: Request, res: Response) {
+  const input = customerLoginSchema.parse(req.body);
+  const { user, accessToken, refreshToken } = await authService.loginByPhone(input);
+  res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions);
+  sendSuccess(res, { user, accessToken });
+}
+
+export async function me(req: Request, res: Response) {
+  const user = await authService.me(req.user!.userId);
+  sendSuccess(res, { user });
 }
 
 export async function refresh(req: Request, res: Response) {

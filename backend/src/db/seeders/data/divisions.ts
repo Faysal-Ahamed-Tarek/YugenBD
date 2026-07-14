@@ -1,9 +1,9 @@
 export const divisionsData = [
   "Dhaka",
-  "Chattogram",
+  "Chattagram",
   "Rajshahi",
   "Khulna",
-  "Barishal",
+  "Barisal",
   "Sylhet",
   "Rangpur",
   "Mymensingh",

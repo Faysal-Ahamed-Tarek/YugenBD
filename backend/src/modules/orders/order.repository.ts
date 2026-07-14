@@ -75,6 +75,15 @@ export const orderRepository = {
     return order ?? null;
   },
 
+  /** All orders placed by a given user, newest first, with their items. */
+  findByUser(userId: string) {
+    return db.query.orders.findMany({
+      where: eq(orders.userId, userId),
+      orderBy: desc(orders.createdAt),
+      with: { items: { orderBy: asc(orderItems.title) } },
+    });
+  },
+
   /** Admin list: search by customer name/phone, filter by status, paginated, newest first. */
   async findMany(query: ListOrdersQuery) {
     const conditions = [];

@@ -48,6 +48,7 @@ export interface Category {
   // null = top-level category; set = a subcategory. `children` is present on
   // top-level rows from the default (tree) GET /categories response.
   parentId: string | null;
+  sortOrder: number;
   children?: Category[];
   createdAt: string;
 }

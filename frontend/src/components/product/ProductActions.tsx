@@ -5,7 +5,8 @@ import { useState } from "react";
 import type { ProductDetail } from "@/types";
 import { addToCart } from "@/lib/cart";
 
-const WHATSAPP_NUMBER = "8801700000000"; // hotline number without "+"
+// WhatsApp order number in international format (no "+"). Local 01924415506 → 880…
+const WHATSAPP_NUMBER = "8801924415506";
 
 /**
  * Quantity selector + purchase actions. "Order Now" adds the chosen quantity to
@@ -47,7 +48,7 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
   };
 
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Hi! I want to order: ${product.title} (qty ${quantity})`
+    `hi ! i want to order : "${product.title}"`
   )}`;
 
   return (

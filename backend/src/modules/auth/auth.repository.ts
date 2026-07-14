@@ -7,8 +7,25 @@ export const authRepository = {
     return db.query.users.findFirst({ where: eq(users.email, email) });
   },
 
+  findByPhone(phone: string) {
+    return db.query.users.findFirst({ where: eq(users.phone, phone) });
+  },
+
   findById(id: string) {
     return db.query.users.findFirst({ where: eq(users.id, id) });
+  },
+
+  createCustomer(values: {
+    fullName: string;
+    phone: string;
+    email: string | null;
+    passwordHash: string;
+  }) {
+    return db
+      .insert(users)
+      .values({ ...values, role: "customer" })
+      .returning()
+      .then((rows) => rows[0]);
   },
 
   updatePassword(id: string, passwordHash: string) {

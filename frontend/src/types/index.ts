@@ -7,6 +7,7 @@ export interface Category {
   // a single category fetched by slug when it is a parent. `parent` is present
   // on a single subcategory fetched by slug (used for breadcrumbs).
   parentId?: string | null;
+  sortOrder?: number;
   children?: Category[];
   parent?: Category | null;
   createdAt: string;
@@ -132,6 +133,31 @@ export type DeliveryZone = "inside_dhaka" | "outside_dhaka";
 
 export type PaymentMethod = "bkash" | "cod";
 export type PaymentStatus = "pending" | "verified";
+
+export interface AuthUser {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string;
+  role: "customer" | "admin";
+}
+
+export interface LocationOption {
+  id: string;
+  name: string;
+}
+
+export interface ShippingAddress {
+  id: string;
+  divisionId: string;
+  districtId: string;
+  upazilaId: string;
+  phone: string | null;
+  addressLine1: string;
+  divisionName: string;
+  districtName: string;
+  upazilaName: string;
+}
 
 export interface OrderItem {
   id: string;

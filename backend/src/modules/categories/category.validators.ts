@@ -6,6 +6,8 @@ export const createCategorySchema = z.object({
   // Optional parent for subcategories. null / omitted = top-level category.
   // The service validates the parent exists and is itself top-level.
   parentId: z.string().uuid().nullable().optional(),
+  // Manual display order (lower first), like concerns.
+  sortOrder: z.number().int().min(0).optional(),
 });
 
 export const updateCategorySchema = createCategorySchema.partial();
