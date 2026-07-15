@@ -49,6 +49,10 @@ body {
 
 html {
   scroll-behavior: smooth;
+  /* Global text scale. Browser default is 16px; every Tailwind text-* size is
+     in rem, so this one value scales ALL text (and rem-based spacing) at once.
+     Change 18px to taste (16 = original, 20 = larger). */
+  font-size: 18px;
 }
 
 /* Rich text (admin-authored, sanitized) rendered in product accordion */

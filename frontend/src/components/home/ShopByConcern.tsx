@@ -37,7 +37,7 @@ export default function ShopByConcern({ concerns }: { concerns: Concern[] }) {
                   fit="contain"
                 />
               </span>
-              <span className="mt-2.5 block text-xs md:text-sm font-medium leading-snug group-hover:text-primary transition-colors">
+              <span className="mt-2.5 block text-xs md:text-[18px] font-medium leading-snug group-hover:text-primary transition-colors">
                 {concern.title}
               </span>
             </Link>

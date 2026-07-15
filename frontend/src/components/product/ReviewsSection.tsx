@@ -21,7 +21,7 @@ export default async function ReviewsSection({
     <section aria-label="Customer reviews" className="mt-10 md:mt-14">
       <div className="mb-4 md:mb-6 flex items-start justify-between gap-4">
         <h2 className="text-xl md:text-2xl font-semibold">
-          Customer Reviews for {productTitle}
+          Customer Reviews
           {reviews.length > 0 && (
             <span className="text-muted font-normal"> ({reviews.length})</span>
           )}

@@ -94,34 +94,32 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-7xl px-4 py-4 md:py-6">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Products" }]} />
 
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold">
-            {filters.q
-              ? `Search results for “${filters.q}”`
-              : chips.length > 0
-                ? "Filtered Products"
-                : "Shop All Products"}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
+      <div className="mt-4">
+        <h1 className="text-xl md:text-3xl font-semibold">
+          {filters.q
+            ? `Search results for “${filters.q}”`
+            : "Authentic Japanese Skincare Products in Bangladesh"}
+        </h1>
+        {/* Mobile: filter button + count on their own row under the title.
+            Desktop: the count (the filter button is lg:hidden). */}
+        <div className="mt-2 flex items-center gap-3">
+          <MobileFilters
+            key={filterKey}
+            categories={categories}
+            concerns={concerns}
+            current={filters}
+            activeCount={chips.length}
+          />
+          <p className="text-sm text-muted">
             {pagination.total} product{pagination.total === 1 ? "" : "s"}
           </p>
         </div>
-        <MobileFilters
-          key={filterKey}
-          categories={categories}
-          concerns={concerns}
-          current={filters}
-          activeCount={chips.length}
-        />
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8">
-        {/* Desktop sidebar filters */}
+        {/* Desktop sidebar filters — scrolls with the page (not sticky) */}
         <aside className="hidden lg:block">
-          <div className="sticky top-20">
-            <ProductFilters key={filterKey} categories={categories} concerns={concerns} current={filters} />
-          </div>
+          <ProductFilters key={filterKey} categories={categories} concerns={concerns} current={filters} />
         </aside>
 
         {/* Results */}

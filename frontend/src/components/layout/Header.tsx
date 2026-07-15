@@ -82,7 +82,7 @@ export default async function Header() {
                 <li key={cat.id} className="group relative shrink-0">
                   <Link
                     href={`/category/${cat.slug}`}
-                    className="inline-flex items-center gap-1 py-2.5 text-foreground hover:text-primary transition-colors"
+                    className="inline-flex items-center gap-1 py-2.5 text-[16px] text-foreground hover:text-primary transition-colors"
                   >
                     {cat.name}
                     {children.length > 0 && (
@@ -97,7 +97,7 @@ export default async function Header() {
                         <li key={child.id}>
                           <Link
                             href={`/category/${child.slug}`}
-                            className="block rounded-lg px-3 py-2 text-foreground hover:bg-primary-light hover:text-primary transition-colors"
+                            className="block rounded-lg px-3 py-2 text-[16px] text-foreground hover:bg-primary-light hover:text-primary transition-colors"
                           >
                             {child.name}
                           </Link>

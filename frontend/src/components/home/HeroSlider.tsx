@@ -19,6 +19,28 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const pausedRef = useRef(false);
   const count = slides.length;
 
+  // Mouse click-and-drag to scroll (PC). Touch keeps native scroll/snap.
+  const drag = useRef({ down: false, startX: 0, startScroll: 0 });
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    const track = trackRef.current;
+    if (!track) return;
+    drag.current = { down: true, startX: e.clientX, startScroll: track.scrollLeft };
+    pausedRef.current = true;
+    track.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!drag.current.down) return;
+    const track = trackRef.current;
+    if (!track) return;
+    track.scrollLeft = drag.current.startScroll - (e.clientX - drag.current.startX);
+  };
+  const endDrag = () => {
+    if (!drag.current.down) return;
+    drag.current.down = false;
+    pausedRef.current = false;
+  };
+
   const goTo = useCallback(
     (index: number) => {
       const track = trackRef.current;
@@ -61,7 +83,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
           onMouseLeave={() => (pausedRef.current = false)}
           onTouchStart={() => (pausedRef.current = true)}
           onTouchEnd={() => (pausedRef.current = false)}
-          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar md:cursor-grab md:active:cursor-grabbing select-none"
         >
           {slides.map((slide, i) => (
             <div
@@ -75,11 +101,38 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 sizes="(max-width: 1280px) 100vw, 1248px"
                 priority={i === 0}
                 loading={i === 0 ? undefined : "lazy"}
+                draggable={false}
                 className="object-cover"
               />
             </div>
           ))}
         </div>
+
+        {/* Prev / next arrows (loops) — shown when there's more than one slide */}
+        {count > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous slide"
+              onClick={() => goTo(active - 1)}
+              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 inline-flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-full bg-background/85 border border-border shadow-md text-foreground hover:text-primary hover:bg-background transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M15 6l-6 6 6 6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Next slide"
+              onClick={() => goTo(active + 1)}
+              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 inline-flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-full bg-background/85 border border-border shadow-md text-foreground hover:text-primary hover:bg-background transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
+          </>
+        )}
 
         {/* Dot indicators — only when there's more than one slide */}
         {count > 1 && (
