@@ -3,7 +3,9 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { api, API_URL, ApiError } from "@/lib/api";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   formatPrice,
   formatDateTime,
@@ -15,9 +17,11 @@ import type { Order, OrderStatus, PaymentStatus } from "@/lib/types";
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     api
@@ -70,14 +74,23 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </h1>
           <p className="text-sm text-muted">{formatDateTime(order.createdAt)}</p>
         </div>
-        <a
-          href={`${API_URL}/orders/${order.id}/pdf`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
-        >
-          Download PDF
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href={`${API_URL}/orders/${order.id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+          >
+            Download PDF
+          </a>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-full border border-red-600 px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+          >
+            Delete order
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -216,6 +229,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
       </section>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete order"
+        message={`Permanently delete order ${order.id.slice(0, 8)} from ${order.fullName}? This removes the order and all its items and cannot be undone.`}
+        confirmLabel="Delete order"
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={async () => {
+          await api.del(`/orders/${order.id}`);
+          router.push("/orders");
+        }}
+      />
     </div>
   );
 }

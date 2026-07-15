@@ -127,4 +127,16 @@ export const orderRepository = {
       .returning()
       .then((rows) => rows[0] ?? null);
   },
+
+  /**
+   * Permanently delete an order. Its order_items are removed automatically by
+   * the ON DELETE CASCADE FK. Returns the deleted id, or null when not found.
+   */
+  deleteById(id: string) {
+    return db
+      .delete(orders)
+      .where(eq(orders.id, id))
+      .returning({ id: orders.id })
+      .then((rows) => rows[0] ?? null);
+  },
 };

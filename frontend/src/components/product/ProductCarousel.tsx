@@ -19,7 +19,7 @@ export default function ProductCarousel({ title, products, viewAllHref }: Produc
   if (items.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 md:py-12">
+    <section className="mx-auto max-w-7xl px-4 py-8 md:py-8">
       <div className="mb-4 md:mb-6 flex items-center justify-between">
         <h2 className="text-xl md:text-2xl font-semibold">{title}</h2>
         {viewAllHref && (

@@ -125,13 +125,21 @@ export interface CreateOrderResult {
  * message on failure so the checkout page can show it without clearing the
  * cart.
  */
-export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResult> {
+export async function createOrder(
+  payload: CreateOrderPayload,
+  accessToken?: string | null
+): Promise<CreateOrderResult> {
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    // Attach the customer's token so the backend (optionalAuth) links the order
+    // to their account; omitted for guests, who can still order.
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
     const res = await fetch(`${PUBLIC_API_URL}/orders`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
       cache: "no-store",
+      credentials: "include",
     });
     const json = (await res.json().catch(() => null)) as ApiResponse<Order> | null;
     if (res.status === 429) {

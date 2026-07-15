@@ -31,7 +31,7 @@ export default function CartButton() {
           </span>
         )}
       </span>
-      <span className="hidden md:block">Cart</span>
+      <span className="hidden md:block md:text-[15px]">Cart</span>
     </Link>
   );
 }

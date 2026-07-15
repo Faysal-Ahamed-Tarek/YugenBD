@@ -16,7 +16,7 @@ export default async function Header() {
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
       <div className="mx-auto max-w-7xl px-4">
-        <div className="flex h-14 md:h-16 items-center justify-between gap-4">
+        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
           {/* Logo */}
           <Link href="/" className="shrink-0" aria-label="YugenBD home">
             <Image
@@ -25,7 +25,7 @@ export default async function Header() {
               width={132}
               height={32}
               priority
-              className="h-10 md:h-10 w-auto"
+              className="h-12 md:h-14 w-auto"
             />
           </Link>
 
@@ -41,7 +41,7 @@ export default async function Header() {
             <Link
               href="/products"
               aria-label="All products"
-              className="hidden md:flex flex-col items-center gap-0.5 text-[11px] font-medium text-foreground hover:text-primary transition-colors"
+              className="hidden md:flex flex-col items-center gap-0.5 text-[15px] font-medium text-foreground hover:text-primary transition-colors"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -58,7 +58,7 @@ export default async function Header() {
             <Link
               href="/account"
               aria-label="Account"
-              className="hidden md:flex flex-col items-center gap-0.5 text-[11px] font-medium text-foreground hover:text-primary transition-colors"
+              className="hidden md:flex flex-col items-center gap-0.5 text-[15px] font-medium text-foreground hover:text-primary transition-colors"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="8" r="4" />

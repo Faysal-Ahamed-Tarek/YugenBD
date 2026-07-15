@@ -161,7 +161,7 @@ export default async function ProductPage({ params }: PageProps) {
               the default <p> margins so it sits flush with the price/title layout. */}
           {hasContent(shortDescriptionHtml) && (
             <div
-              className="rich-text rich-text-inline mt-4 text-[15px] leading-relaxed text-muted"
+              className="rich-text rich-text-inline mt-4 text-[20px] leading-relaxed text-foreground"
               dangerouslySetInnerHTML={{ __html: shortDescriptionHtml }}
             />
           )}

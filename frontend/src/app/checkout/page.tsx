@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getCart, clearCart, type CartItem } from "@/lib/cart";
 import { createOrder } from "@/lib/api";
+import { getFreshAccessToken } from "@/lib/authClient";
 import { formatPrice } from "@/lib/format";
 import type { DeliveryZone, PaymentMethod } from "@/types";
 import ProductImage from "@/components/product/ProductImage";
@@ -86,20 +87,26 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     setError(null);
-    const result = await createOrder({
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      address: address.trim(),
-      deliveryZone: zone,
-      paymentMethod,
-      ...(paymentMethod === "bkash"
-        ? { bkashTransactionId: bkashTxn.trim(), bkashAmount: bkashAmountNum }
-        : {}),
-      items: items.map((i) => ({
-        productId: i.productId,
-        quantity: i.quantity,
-      })),
-    });
+    // Fresh token (null for guests) so a signed-in customer's order links to
+    // their account and shows up in their dashboard order history.
+    const accessToken = await getFreshAccessToken();
+    const result = await createOrder(
+      {
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+        deliveryZone: zone,
+        paymentMethod,
+        ...(paymentMethod === "bkash"
+          ? { bkashTransactionId: bkashTxn.trim(), bkashAmount: bkashAmountNum }
+          : {}),
+        items: items.map((i) => ({
+          productId: i.productId,
+          quantity: i.quantity,
+        })),
+      },
+      accessToken
+    );
     if (result.ok && result.order) {
       clearCart();
       router.push(`/order-confirmation/${result.order.id}`);

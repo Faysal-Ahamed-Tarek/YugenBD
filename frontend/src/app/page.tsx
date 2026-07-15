@@ -110,7 +110,7 @@ export default async function HomePage() {
         <ProductCarousel title="Best Sellers" products={bestSellers} viewAllHref="/category/best-seller" />
       )}
 
-      <ProductCarousel title="New Arrivals" products={newArrivals} viewAllHref="/products" />
+      <ProductCarousel title="New Arrivals" products={newArrivals} viewAllHref="/category/new-arrivals" />
 
       <ProductCarousel
         title="Skincare Essentials"

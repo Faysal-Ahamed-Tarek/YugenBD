@@ -49,6 +49,12 @@ export async function updatePaymentStatus(req: Request, res: Response) {
   sendSuccess(res, order);
 }
 
+export async function deleteOrder(req: Request, res: Response) {
+  const { id } = orderIdParamSchema.parse(req.params);
+  await orderService.remove(id);
+  sendSuccess(res, { id });
+}
+
 export async function getOrder(req: Request, res: Response) {
   const { id } = orderIdParamSchema.parse(req.params);
   const order = await orderService.getById(id);

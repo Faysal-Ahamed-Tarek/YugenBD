@@ -48,7 +48,7 @@ export default function ProductAccordion({ sections }: { sections: AccordionSect
               <div className="overflow-hidden">
                 {/* section.content is pre-sanitized HTML from the server. */}
                 <div
-                  className="rich-text pb-4 text-sm md:text-base leading-relaxed text-muted"
+                  className="rich-text pb-4 text-[20px] leading-relaxed text-foreground"
                   dangerouslySetInnerHTML={{ __html: section.content }}
                 />
               </div>

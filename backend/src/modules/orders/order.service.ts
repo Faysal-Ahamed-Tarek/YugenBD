@@ -160,4 +160,11 @@ export const orderService = {
     if (!updated) throw ApiError.notFound("Order not found");
     return updated;
   },
+
+  /** Permanently delete an order (and its items via cascade). Admin only. */
+  async remove(id: string) {
+    const deleted = await orderRepository.deleteById(id);
+    if (!deleted) throw ApiError.notFound("Order not found");
+    return deleted;
+  },
 };

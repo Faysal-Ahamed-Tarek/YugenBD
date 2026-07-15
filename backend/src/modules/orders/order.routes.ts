@@ -11,6 +11,7 @@ import {
   createManualOrder,
   updateOrderStatus,
   updatePaymentStatus,
+  deleteOrder,
 } from "./order.controller";
 
 const router = Router();
@@ -27,6 +28,7 @@ router.get("/", requireAuth, requireRole("admin"), asyncHandler(listOrders));
 router.post("/manual", requireAuth, requireRole("admin"), asyncHandler(createManualOrder));
 router.patch("/:id/status", requireAuth, requireRole("admin"), asyncHandler(updateOrderStatus));
 router.patch("/:id/payment-status", requireAuth, requireRole("admin"), asyncHandler(updatePaymentStatus));
+router.delete("/:id", requireAuth, requireRole("admin"), asyncHandler(deleteOrder));
 
 // Public single-order reads (confirmation page + PDF) — rate limited.
 router.get("/:id/pdf", orderReadLimiter, asyncHandler(getOrderPdf));

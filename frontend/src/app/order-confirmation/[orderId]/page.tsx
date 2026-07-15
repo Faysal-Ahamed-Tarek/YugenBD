@@ -6,7 +6,7 @@ import { formatPrice } from "@/lib/format";
 import ProductImage from "@/components/product/ProductImage";
 
 const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-const WHATSAPP_NUMBER = "8801700000000";
+const WHATSAPP_NUMBER = "8801924415506";
 
 export const metadata: Metadata = {
   title: "Order Confirmed",
@@ -29,7 +29,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
 
   const pdfHref = `${PUBLIC_API_URL}/orders/${order.id}/pdf`;
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Hi! I need help with my order ${order.id}`
+    `Hi! I need help with my order ${order.id.slice(0, 8)}`
   )}`;
 
   return (
@@ -46,7 +46,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
           Thank you, {order.fullName.split(" ")[0]}! We&apos;ll call you to confirm before shipping.
         </p>
         <p className="mt-1 text-sm">
-          Order ID: <span className="font-semibold">{order.id}</span>
+          Order ID: <span className="font-semibold font-mono">{order.id.slice(0, 8)}</span>
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
               <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface">
                 <ProductImage src={item.imageUrl} alt={item.title} sizes="56px" />
               </span>
-              <span className="flex-1 text-sm">
+              <span className="flex-1 text-base">
                 <span className="line-clamp-1">
                   {item.title}
                   {item.isPreOrder && (
@@ -73,14 +73,14 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
                   Qty {item.quantity} × {formatPrice(item.price)}
                 </span>
               </span>
-              <span className="text-sm font-semibold">
+              <span className="text-base font-semibold">
                 {formatPrice(parseFloat(item.price) * item.quantity)}
               </span>
             </li>
           ))}
         </ul>
 
-        <div className="mt-4 space-y-2 text-sm">
+        <div className="mt-4 space-y-2 text-base">
           <div className="flex justify-between">
             <span className="text-muted">Subtotal</span>
             <span className="font-semibold">{formatPrice(order.subtotal)}</span>
@@ -98,7 +98,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
         </div>
 
         {order.paymentMethod === "bkash" ? (
-          <div className="mt-4 rounded-lg bg-surface px-3 py-2.5 text-sm">
+          <div className="mt-4 rounded-lg bg-surface px-3 py-2.5 text-base">
             📱 <strong>bKash Send Money</strong> — transaction{" "}
             <span className="font-medium">{order.bkashTransactionId}</span>
             {order.bkashAmount && <> · {formatPrice(order.bkashAmount)}</>}.{" "}
@@ -107,19 +107,19 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
               : "We'll verify your payment before shipping."}
           </div>
         ) : (
-          <div className="mt-4 rounded-lg bg-surface px-3 py-2.5 text-sm">
+          <div className="mt-4 rounded-lg bg-surface px-3 py-2.5 text-base">
             💵 <strong>Cash on Delivery</strong> — please keep {formatPrice(order.total)} ready for the courier.
           </div>
         )}
 
         {order.items.some((item) => item.isPreOrder) && (
-          <div className="mt-3 rounded-lg border border-primary/40 bg-primary-light px-3 py-2.5 text-sm text-primary">
+          <div className="mt-3 rounded-lg border border-primary/40 bg-primary-light px-3 py-2.5 text-base text-primary">
             Some items are pre-orders and will ship as soon as they&apos;re back in stock.
           </div>
         )}
 
         {/* Delivery address */}
-        <div className="mt-4 text-sm">
+        <div className="mt-4 text-base">
           <p className="font-medium">Delivering to</p>
           <p className="mt-1 text-muted">
             {order.fullName} · {order.phone}

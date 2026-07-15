@@ -31,6 +31,25 @@ let onUnauthorized: () => void = () => {};
 export function setAccessToken(token: string | null) {
   accessToken = token;
 }
+export function getAccessToken() {
+  return accessToken;
+}
+
+/**
+ * Returns a guaranteed-fresh access token for a signed-in customer, or null for
+ * guests. Order placement hits an `optionalAuth` route, which never returns 401,
+ * so the usual refresh-on-401 can't kick in — and the 15-min access token may
+ * already be stale by the time the customer reaches checkout. We refresh up
+ * front (via the 30-day httpOnly cookie) so the new order links to their account.
+ */
+export async function getFreshAccessToken(): Promise<string | null> {
+  if (!accessToken) return null; // guest — nothing to link
+  if (refreshHandler) {
+    const fresh = await refreshHandler();
+    if (fresh) return fresh;
+  }
+  return accessToken;
+}
 export function setRefreshHandler(fn: (() => Promise<string | null>) | null) {
   refreshHandler = fn;
 }
