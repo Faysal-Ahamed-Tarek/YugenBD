@@ -10,6 +10,10 @@ export const addresses = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     label: varchar("label", { length: 50 }),
+    // Recipient's full name for this shipping address (seeded from the account
+    // name at registration; editable from the dashboard). Nullable for rows
+    // created before this column existed.
+    fullName: varchar("full_name", { length: 150 }),
     divisionId: uuid("division_id")
       .notNull()
       .references(() => divisions.id),

@@ -110,23 +110,7 @@ export default async function HomePage() {
         <ProductCarousel title="Best Sellers" products={bestSellers} viewAllHref="/category/best-seller" />
       )}
 
-      <ProductCarousel title="New Arrivals" products={newArrivals} viewAllHref="/category/new-arrivals" />
-
-      <ProductCarousel
-        title="Skincare Essentials"
-        products={skincare}
-        viewAllHref="/category/skincare"
-      />
-      <ProductCarousel
-        title="Haircare Picks"
-        products={haircare}
-        viewAllHref="/category/haircare"
-      />
-      <ProductCarousel
-        title="Makeup Must-Haves"
-        products={makeup}
-        viewAllHref="/category/makeup"
-      />
+      <ProductCarousel title="New Arrivals" products={newArrivals} viewAllHref="/category/new-arrival" />
     </>
   );
 }

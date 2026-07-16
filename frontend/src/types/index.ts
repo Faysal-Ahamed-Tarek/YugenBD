@@ -149,6 +149,7 @@ export interface LocationOption {
 
 export interface ShippingAddress {
   id: string;
+  fullName: string | null;
   divisionId: string;
   districtId: string;
   upazilaId: string;

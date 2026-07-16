@@ -3,6 +3,7 @@ import { db } from "../../db/client";
 import { addresses, divisions, districts, upazilas } from "../../db/schema";
 
 type AddressValues = {
+  fullName: string;
   divisionId: string;
   districtId: string;
   upazilaId: string;
@@ -16,6 +17,7 @@ export const addressRepository = {
     const [row] = await db
       .select({
         id: addresses.id,
+        fullName: addresses.fullName,
         divisionId: addresses.divisionId,
         districtId: addresses.districtId,
         upazilaId: addresses.upazilaId,

@@ -11,7 +11,7 @@ interface NavItem {
   label: string;
   href?: string;
   // Non-navigation action rendered as a button instead of a link.
-  action?: "scrollTop";
+  action?: "scrollTop" | "openCart";
   icon: React.ReactNode;
 }
 
@@ -40,7 +40,7 @@ const ITEMS: NavItem[] = [
   },
   {
     label: "Cart",
-    href: "/cart",
+    action: "openCart",
     icon: (
       <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <circle cx="9" cy="20" r="1.5" />
@@ -122,10 +122,14 @@ export default function BottomNav() {
           }`;
           return (
             <li key={item.label} className="flex-1">
-              {item.action === "scrollTop" ? (
+              {item.action ? (
                 <button
                   type="button"
-                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  onClick={() =>
+                    item.action === "openCart"
+                      ? window.dispatchEvent(new CustomEvent("cart:open"))
+                      : window.scrollTo({ top: 0, behavior: "smooth" })
+                  }
                   className={className}
                 >
                   {inner}

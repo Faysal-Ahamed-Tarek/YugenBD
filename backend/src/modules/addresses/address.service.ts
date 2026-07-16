@@ -10,21 +10,31 @@ export const addressService = {
   },
 
   /**
+   * Validates the division → district → upazila chain is internally consistent.
+   * Throws badRequest on mismatch. Exposed so callers (e.g. registration) can
+   * check before creating dependent records.
+   */
+  async validateLocationChain(divisionId: string, districtId: string, upazilaId: string) {
+    const district = await locationRepository.findDistrictById(districtId);
+    if (!district || district.divisionId !== divisionId) {
+      throw ApiError.badRequest("The selected district does not belong to the selected division.");
+    }
+    const upazila = await locationRepository.findUpazilaById(upazilaId);
+    if (!upazila || upazila.districtId !== districtId) {
+      throw ApiError.badRequest("The selected upazila does not belong to the selected district.");
+    }
+  },
+
+  /**
    * Upsert the user's default shipping address. Validates the location chain:
    * the district must belong to the chosen division, and the upazila to the
    * chosen district — so the stored address is always internally consistent.
    */
   async saveMine(userId: string, input: SaveAddressInput) {
-    const district = await locationRepository.findDistrictById(input.districtId);
-    if (!district || district.divisionId !== input.divisionId) {
-      throw ApiError.badRequest("The selected district does not belong to the selected division.");
-    }
-    const upazila = await locationRepository.findUpazilaById(input.upazilaId);
-    if (!upazila || upazila.districtId !== input.districtId) {
-      throw ApiError.badRequest("The selected upazila does not belong to the selected district.");
-    }
+    await this.validateLocationChain(input.divisionId, input.districtId, input.upazilaId);
 
     const values = {
+      fullName: input.fullName,
       divisionId: input.divisionId,
       districtId: input.districtId,
       upazilaId: input.upazilaId,

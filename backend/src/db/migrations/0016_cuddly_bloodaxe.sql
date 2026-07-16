@@ -1,0 +1,1 @@
+ALTER TABLE "addresses" ADD COLUMN "full_name" varchar(150);

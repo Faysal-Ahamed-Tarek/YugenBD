@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getCart, clearCart, type CartItem } from "@/lib/cart";
 import { createOrder } from "@/lib/api";
-import { getFreshAccessToken } from "@/lib/authClient";
+import { getFreshAccessToken, authApi } from "@/lib/authClient";
+import { useAuth } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
-import type { DeliveryZone, PaymentMethod } from "@/types";
+import type { DeliveryZone, PaymentMethod, LocationOption, ShippingAddress } from "@/types";
 import ProductImage from "@/components/product/ProductImage";
 
 // Local Bangladeshi format for order-time phone capture: 01XXXXXXXXX (11 digits).
@@ -15,7 +16,20 @@ const BD_PHONE = /^01[3-9]\d{8}$/;
 
 // bKash merchant/personal number shown to the customer (they Send Money to it,
 // then type the transaction id/amount). Configurable via env.
-const BKASH_NUMBER = process.env.NEXT_PUBLIC_BKASH_NUMBER ?? "01700000000";
+const BKASH_NUMBER = process.env.NEXT_PUBLIC_BKASH_NUMBER ?? "01924415506";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+
+/** Public location reference data for the cascading address selector. */
+async function fetchLocations(path: string): Promise<LocationOption[]> {
+  const res = await fetch(`${API_URL}${path}`);
+  if (!res.ok) return [];
+  const json = (await res.json()) as { data?: LocationOption[] };
+  return json.data ?? [];
+}
+
+const selectClass =
+  "w-full h-11 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition disabled:opacity-50 disabled:cursor-not-allowed";
 
 // Fees mirror the authoritative server values (order.service DELIVERY); the
 // backend recomputes the total regardless.
@@ -31,12 +45,19 @@ const DELIVERY_OPTIONS: {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [divisions, setDivisions] = useState<LocationOption[]>([]);
+  const [districts, setDistricts] = useState<LocationOption[]>([]);
+  const [upazilas, setUpazilas] = useState<LocationOption[]>([]);
+  const [divisionId, setDivisionId] = useState("");
+  const [districtId, setDistrictId] = useState("");
+  const [upazilaId, setUpazilaId] = useState("");
+  const [area, setArea] = useState("");
   const [zone, setZone] = useState<DeliveryZone | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [bkashTxn, setBkashTxn] = useState("");
@@ -56,6 +77,66 @@ export default function CheckoutPage() {
     setReady(true);
   }, [router]);
 
+  // Load divisions for the address selector.
+  useEffect(() => {
+    fetchLocations("/locations/divisions").then(setDivisions);
+  }, []);
+
+  // Signed-in customers: prefill the form from their saved shipping address
+  // (falling back to account name/phone). Everything stays editable — we only
+  // fill fields the customer hasn't typed into yet, so a slow response never
+  // clobbers their input. Guests skip this entirely.
+  const prefilledRef = useRef(false);
+  const divisionIdRef = useRef(divisionId);
+  divisionIdRef.current = divisionId;
+  useEffect(() => {
+    if (!user || prefilledRef.current) return;
+    prefilledRef.current = true;
+    (async () => {
+      try {
+        const res = await authApi.get<ShippingAddress | null>("/addresses/me");
+        const a = res.data;
+        // Account phone is +8801… ; the checkout field wants local 01… format.
+        const localPhone = (a?.phone ?? user.phone ?? "").replace(/^\+880/, "0");
+        setFullName((prev) => prev || a?.fullName || user.fullName || "");
+        setPhone((prev) => prev || (BD_PHONE.test(localPhone) ? localPhone : ""));
+        if (a && !divisionIdRef.current) {
+          const [dists, upas] = await Promise.all([
+            fetchLocations(`/locations/districts?divisionId=${a.divisionId}`),
+            fetchLocations(`/locations/upazilas?districtId=${a.districtId}`),
+          ]);
+          // Re-check: the customer may have started picking while we fetched.
+          if (!divisionIdRef.current) {
+            setDistricts(dists);
+            setUpazilas(upas);
+            setDivisionId(a.divisionId);
+            setDistrictId(a.districtId);
+            setUpazilaId(a.upazilaId);
+            setArea((prev) => prev || a.addressLine1);
+          }
+        }
+      } catch {
+        /* leave the form blank — checkout still works without the prefill */
+      }
+    })();
+  }, [user]);
+
+  const onDivision = async (id: string) => {
+    setDivisionId(id);
+    setDistrictId("");
+    setUpazilaId("");
+    setDistricts([]);
+    setUpazilas([]);
+    setTouched((t) => ({ ...t, address: true }));
+    if (id) setDistricts(await fetchLocations(`/locations/districts?divisionId=${id}`));
+  };
+  const onDistrict = async (id: string) => {
+    setDistrictId(id);
+    setUpazilaId("");
+    setUpazilas([]);
+    if (id) setUpazilas(await fetchLocations(`/locations/upazilas?districtId=${id}`));
+  };
+
   const subtotal = useMemo(
     () => items.reduce((sum, i) => sum + parseFloat(i.price) * i.quantity, 0),
     [items]
@@ -63,11 +144,22 @@ export default function CheckoutPage() {
   const selected = DELIVERY_OPTIONS.find((o) => o.zone === zone) ?? null;
   const total = selected ? subtotal + selected.fee : null;
 
+  // Address is built from the cascading location selection.
+  const divisionName = divisions.find((d) => d.id === divisionId)?.name ?? "";
+  const districtName = districts.find((d) => d.id === districtId)?.name ?? "";
+  const upazilaName = upazilas.find((u) => u.id === upazilaId)?.name ?? "";
+  const locationChosen = Boolean(divisionId && districtId && upazilaId);
+  const composedAddress = [area.trim(), upazilaName, districtName, divisionName].filter(Boolean).join(", ");
+
   const bkashAmountNum = parseFloat(bkashAmount);
   const errors = {
     fullName: fullName.trim().length < 2 ? "Please enter your full name" : "",
     phone: BD_PHONE.test(phone.trim()) ? "" : "Enter a valid number (01XXXXXXXXX)",
-    address: address.trim().length < 5 ? "Please enter your full delivery address" : "",
+    address: !locationChosen
+      ? "Select your division, district and upazila / thana"
+      : area.trim().length < 3
+        ? "Please enter your area"
+        : "",
     bkashTxn:
       paymentMethod === "bkash" && bkashTxn.trim().length < 4 ? "Enter the bKash transaction ID" : "",
     bkashAmount:
@@ -94,7 +186,7 @@ export default function CheckoutPage() {
       {
         fullName: fullName.trim(),
         phone: phone.trim(),
-        address: address.trim(),
+        address: composedAddress,
         deliveryZone: zone,
         paymentMethod,
         ...(paymentMethod === "bkash"
@@ -149,18 +241,64 @@ export default function CheckoutPage() {
                 maxLength={11}
               />
               <div>
-                <label htmlFor="address" className="block text-sm font-medium mb-1.5">
-                  Delivery Address
-                </label>
-                <textarea
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  onBlur={() => setTouched((t) => ({ ...t, address: true }))}
-                  rows={3}
-                  placeholder="e.g. Dhaka, Dhanmondi, Road 5, House 12"
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition resize-none"
-                />
+                <label className="block text-sm font-medium mb-1.5">Delivery Address</label>
+                {/* Four fields in two rows (50 / 50). Area unlocks only after
+                    division → district → upazila are all selected. */}
+                <div className="grid grid-cols-2 gap-3">
+                  <select
+                    aria-label="Division"
+                    value={divisionId}
+                    onChange={(e) => onDivision(e.target.value)}
+                    className={selectClass}
+                  >
+                    <option value="">Select division</option>
+                    {divisions.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="District"
+                    value={districtId}
+                    onChange={(e) => onDistrict(e.target.value)}
+                    disabled={!divisionId}
+                    className={selectClass}
+                  >
+                    <option value="">{divisionId ? "Select district" : "Select division first"}</option>
+                    {districts.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="Upazila / Thana"
+                    value={upazilaId}
+                    onChange={(e) => {
+                      setUpazilaId(e.target.value);
+                      setTouched((t) => ({ ...t, address: true }));
+                    }}
+                    disabled={!districtId}
+                    className={selectClass}
+                  >
+                    <option value="">{districtId ? "Select upazila / thana" : "Select district first"}</option>
+                    {upazilas.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    aria-label="Area"
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    onBlur={() => setTouched((t) => ({ ...t, address: true }))}
+                    disabled={!locationChosen}
+                    placeholder={locationChosen ? "Area (house / road)" : "Select location first"}
+                    className={selectClass}
+                  />
+                </div>
                 {touched.address && errors.address && (
                   <p className="mt-1 text-xs text-primary">{errors.address}</p>
                 )}

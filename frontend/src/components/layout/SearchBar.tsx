@@ -3,10 +3,17 @@
  * The Shop page (/products) handles search + filters, so there's no separate
  * search results route. Works before hydration and costs nothing in the bundle.
  */
-export default function SearchBar({ autoFocus = false }: { autoFocus?: boolean }) {
+export default function SearchBar({
+  autoFocus = false,
+  inputRef,
+}: {
+  autoFocus?: boolean;
+  inputRef?: React.Ref<HTMLInputElement>;
+}) {
   return (
     <form action="/products" role="search" className="relative">
       <input
+        ref={inputRef}
         type="search"
         name="q"
         placeholder="Search products…"

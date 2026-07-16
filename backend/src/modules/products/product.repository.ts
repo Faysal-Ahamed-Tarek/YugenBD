@@ -87,7 +87,41 @@ function buildFilters(
 
   const titleQuery = query.q ?? query.search;
   if (titleQuery) {
-    conditions.push(ilike(products.title, `%${titleQuery}%`));
+    // Typo-tolerant match: exact substring (ilike) OR trigram word similarity
+    // (pg_trgm, enabled in migration 0017) so "shmpoo" still finds "Shampoo".
+    // strict_word_similarity respects word boundaries — plain word_similarity
+    // lets short queries match stray trigrams (e.g. "acne" ≈ "Hyaluronic Acid").
+    // 0.45 absorbs 1–2 character typos ("shmpoo"→"Shampoo" scores 0.5).
+    const fuzzyMatch = (column: typeof products.title | typeof categories.name | typeof concerns.title) =>
+      or(
+        ilike(column, `%${titleQuery}%`),
+        sql`strict_word_similarity(${titleQuery}, ${column}) > 0.45`
+      );
+
+    conditions.push(
+      or(
+        // product title matches…
+        fuzzyMatch(products.title),
+        // …or the query names a category the product belongs to…
+        inArray(
+          products.id,
+          db
+            .select({ id: productCategories.productId })
+            .from(productCategories)
+            .innerJoin(categories, eq(productCategories.categoryId, categories.id))
+            .where(fuzzyMatch(categories.name))
+        ),
+        // …or a concern the product is tagged with.
+        inArray(
+          products.id,
+          db
+            .select({ id: productConcerns.productId })
+            .from(productConcerns)
+            .innerJoin(concerns, eq(productConcerns.concernId, concerns.id))
+            .where(fuzzyMatch(concerns.title))
+        )
+      )
+    );
   }
 
   // Filter on the effective (paid) price: discountPrice when set, else basePrice.

@@ -92,7 +92,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
           {slides.map((slide, i) => (
             <div
               key={slide.id}
-              className="relative w-full shrink-0 snap-start aspect-[16/9] max-h-[440px] md:aspect-[21/8]"
+              className="relative w-full shrink-0 snap-start aspect-[16/9] md:aspect-[16/6]"
             >
               <Image
                 src={slide.imageUrl}

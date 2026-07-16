@@ -66,7 +66,7 @@ export default function Carousel({
       <ul
         ref={trackRef}
         aria-label={label}
-        className={`grid grid-flow-col ${itemColsClass} gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth`}
+        className={`grid grid-flow-col ${itemColsClass} gap-3 md:gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth py-3`}
       >
         {children}
       </ul>

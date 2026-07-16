@@ -14,6 +14,16 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
   // Comma-separated list of allowed origins (storefront + admin app).
   CORS_ORIGIN: z.string().default("http://localhost:3000,http://localhost:3001"),
+  // Storefront base URL used in emails (password-reset links).
+  FRONTEND_URL: z.string().default("http://localhost:3000"),
+  // SMTP for transactional email (Gmail: use an App Password). When SMTP_USER
+  // or SMTP_PASS is missing, emails are logged to the console instead of sent
+  // (dev convenience) — production must configure both.
+  SMTP_HOST: z.string().default("smtp.gmail.com"),
+  SMTP_PORT: z.coerce.number().default(465),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
   ADMIN1_NAME: z.string().default("Faysal"),
   ADMIN1_EMAIL: z.string().email().default("faysal.ahamed.tarek1@gmail.com"),
   ADMIN1_PASSWORD: z.string().min(8).default("Rz6#mVbK9tXpL2q"),

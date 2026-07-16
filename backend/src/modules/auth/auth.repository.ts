@@ -1,10 +1,17 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
 import { users } from "../../db/schema";
 
 export const authRepository = {
   findByEmail(email: string) {
     return db.query.users.findFirst({ where: eq(users.email, email) });
+  },
+
+  /** Case-insensitive email lookup — used for customer login by email. */
+  findByEmailInsensitive(email: string) {
+    return db.query.users.findFirst({
+      where: sql`lower(${users.email}) = ${email.toLowerCase()}`,
+    });
   },
 
   findByPhone(phone: string) {

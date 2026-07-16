@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Category } from "@/types";
 import SearchBar from "./SearchBar";
@@ -39,6 +39,18 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
   // Portal target exists only in the browser; render the panel after mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // When the panel is opened via the search icon, move focus into the search
+  // input so the customer can type immediately.
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [focusSearch, setFocusSearch] = useState(false);
+  useEffect(() => {
+    if (open && focusSearch) {
+      const t = setTimeout(() => searchInputRef.current?.focus(), 60);
+      return () => clearTimeout(t);
+    }
+    if (!open) setFocusSearch(false);
+  }, [open, focusSearch]);
 
   // Client-side retry when the server-provided list came back empty.
   useEffect(() => {
@@ -80,7 +92,24 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
   }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="md:hidden flex items-center">
+      {/* Search — opens the panel and focuses the search input */}
+      <button
+        type="button"
+        aria-label="Search"
+        onClick={() => {
+          setFocusSearch(true);
+          setOpen(true);
+        }}
+        className="p-2 rounded-full text-foreground hover:text-primary hover:bg-primary-light transition-colors"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.5-3.5" />
+        </svg>
+      </button>
+
+      {/* Hamburger — opens the menu */}
       <button
         type="button"
         aria-label="Open menu"
@@ -137,7 +166,7 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
 
         {/* 1. Search */}
         <div className="p-4 border-b border-border">
-          <SearchBar />
+          <SearchBar inputRef={searchInputRef} />
         </div>
 
         {/* 2. Categories — scrolls independently if the list is long */}

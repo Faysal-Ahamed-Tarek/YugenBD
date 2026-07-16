@@ -20,7 +20,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const isPreOrder = stock <= 0;
 
   return (
-    <article className="group flex flex-col rounded-xl border border-border bg-background overflow-hidden hover:shadow-lg hover:border-primary/40 transition-all duration-300">
+    <article className="group flex flex-col rounded-xl border border-border bg-background overflow-hidden shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300">
       <Link
         href={`/product/${product.slug}`}
         className="relative block aspect-square overflow-hidden bg-surface"

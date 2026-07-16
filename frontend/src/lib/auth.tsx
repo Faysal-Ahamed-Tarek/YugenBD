@@ -15,14 +15,18 @@ type Status = "loading" | "authenticated" | "unauthenticated";
 export interface RegisterInput {
   fullName: string;
   phone: string;
-  email?: string;
+  email: string;
   password: string;
+  divisionId: string;
+  districtId: string;
+  upazilaId: string;
+  area: string;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
   status: Status;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -67,10 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("authenticated");
   };
 
-  const login = useCallback(async (phone: string, password: string) => {
+  const login = useCallback(async (identifier: string, password: string) => {
     try {
       const res = await authApi.post<{ user: AuthUser; accessToken: string }>("/auth/customer-login", {
-        phone,
+        identifier,
         password,
       });
       applySession(res.data.user, res.data.accessToken);

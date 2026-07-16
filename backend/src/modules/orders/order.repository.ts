@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { orders, orderItems, products, productImages } from "../../db/schema";
+import { orders, orderItems, products, productImages, users } from "../../db/schema";
 import type { ListOrdersQuery, OrderStatus } from "./order.validators";
 
 type NewOrder = typeof orders.$inferInsert;
@@ -75,10 +75,16 @@ export const orderRepository = {
     return order ?? null;
   },
 
-  /** All orders placed by a given user, newest first, with their items. */
+  /**
+   * All orders belonging to a user, newest first, with their items. Matches
+   * both orders linked by userId AND orders placed with the account's phone
+   * number (e.g. guest checkouts made before signing in), so the customer's
+   * history is complete.
+   */
   findByUser(userId: string) {
+    const userPhone = db.select({ phone: users.phone }).from(users).where(eq(users.id, userId));
     return db.query.orders.findMany({
-      where: eq(orders.userId, userId),
+      where: or(eq(orders.userId, userId), inArray(orders.phone, userPhone)),
       orderBy: desc(orders.createdAt),
       with: { items: { orderBy: asc(orderItems.title) } },
     });

@@ -11,7 +11,7 @@ export default async function TestimonialsSection() {
   if (testimonials.length === 0) return null;
 
   return (
-    <section aria-label="Customer video testimonials" className="md:py-6">
+    <section aria-label="Customer video testimonials" className="pb-4 md:py-6">
       {/* Header keeps side padding for readability; the carousel below is edge-to-edge */}
       <header className="mx-auto max-w-7xl px-4 mb-3 md:mb-4 text-center">
         <h2 className="text-2xl md:text-4xl font-bold">

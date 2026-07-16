@@ -185,7 +185,28 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['data'][0]['slug']\\)\")",
       "Bash(grep-rn)",
       "Bash(python3 -c \"import struct; d=open\\('backend/assets/logo.png','rb'\\).read\\(33\\); w,h=struct.unpack\\('>II',d[16:24]\\); print\\('logo',w,'x',h,'ratio',round\\(w/h,3\\)\\)\")",
-      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);p=d['data'][0];print\\(p['id'], '|', p['title']\\)\")"
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);p=d['data'][0];print\\(p['id'], '|', p['title']\\)\")",
+      "Bash(cd /home/faysal/Desktop/YugenBD/backend/src/modules/auth && echo \"=== customerLogin controller ===\"; grep -n \"customerLogin\\\\|customerLoginSchema\" auth.controller.ts; echo \"=== login signature in AuthContextValue ===\"; grep -n \"login:\" ../../../../frontend/src/lib/auth.tsx)",
+      "Bash(python3 -)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(curl -s -o bd-thana.json __TRACKED_VAR__/bd-thana.json)",
+      "Bash(curl -s -o bd-upazila.json __TRACKED_VAR__/bd-upazila.json)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "Bash(python3 -c \"import json;print\\(json.dumps\\(json.load\\(open\\('package.json'\\)\\)['scripts'],indent=2\\)\\)\")",
+      "Bash(curl -s \"localhost:4000/api/v1/products?q=shmpoo&limit=5\")",
+      "Bash(curl -s \"localhost:4000/api/v1/products?q=shampoo&limit=5\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\([p['title'] for p in d['data']]\\)\")",
+      "Bash(curl -s \"localhost:4000/api/v1/categories\")",
+      "Bash(python3 -c \"import json,sys; print\\([c['name'] for c in json.load\\(sys.stdin\\)['data']]\\)\")",
+      "Bash(curl -s \"localhost:4000/api/v1/concerns\")",
+      "Bash(python3 -c \"import json,sys; print\\([c['title'] for c in json.load\\(sys.stdin\\)['data']]\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(curl -s \"localhost:4000/api/v1/products?q=shmpoo&limit=50\")",
+      "Bash(curl -s \"localhost:4000/api/v1/products?search=shmpoo&limit=12\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('meta'\\), len\\(d['data']\\)\\)\")",
+      "Bash(curl -s -X POST localhost:4000/api/v1/auth/customer-login -H \"Content-Type: application/json\" -d '{\"identifier\":\"01711112222\",\"password\":\"testpass123\"}')",
+      "Bash(curl -s -X POST localhost:4000/api/v1/auth/customer-login -H \"Content-Type: application/json\" -d '{\"identifier\":\"01711112222\",\"password\":\"testpass456\"}')"
     ]
   }
 }
