@@ -92,7 +92,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
           {slides.map((slide, i) => (
             <div
               key={slide.id}
-              className="relative w-full shrink-0 snap-start aspect-[16/9] md:aspect-[16/6]"
+              // Desktop frame is 21:10 (2.1:1) to match the banner artwork's
+              // ratio, so the full image shows without top/bottom cropping.
+              // Upload banners at 2100×1000 (or any 21:10 size) for a
+              // pixel-perfect fit on PC.
+              className="relative w-full shrink-0 snap-start aspect-[16/9] md:aspect-[21/10]"
             >
               <Image
                 src={slide.imageUrl}

@@ -43,6 +43,13 @@ export default function RegisterPage() {
     if (status === "authenticated") router.replace("/account");
   }, [status, router]);
 
+  // The form is long, so on mobile the user submits from near the footer.
+  // When the success screen replaces the form, jump back to the top so the
+  // "Confirm your email" notice is actually in view.
+  useEffect(() => {
+    if (registered) window.scrollTo({ top: 0, behavior: "instant" });
+  }, [registered]);
+
   // Load divisions once.
   useEffect(() => {
     fetchLocations("/locations/divisions").then(setDivisions);

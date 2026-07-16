@@ -7,9 +7,9 @@ import TestimonialsSection from "@/components/home/TestimonialsSection";
 import ProductCarousel from "@/components/product/ProductCarousel";
 
 export const metadata: Metadata = {
-  title: "YugenBD — Beauty & Personal Care, Cash on Delivery in Bangladesh",
+  title: "YugenBD — Nourish.Renew.Glow",
   description:
-    "Shop authentic skincare, haircare, makeup and men's grooming products online in Bangladesh. Nationwide cash on delivery across all 64 districts — no advance payment.",
+    "every products is authentically sourced from japan with care and intention. we hope these j-beauty essentials bring a little more radiance to your everyday routine.",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",

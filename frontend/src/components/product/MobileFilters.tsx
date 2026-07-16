@@ -8,7 +8,15 @@ import ProductFilters, { type ActiveFilters } from "./ProductFilters";
 /**
  * Mobile "Filters" button that opens a slide-over panel (portaled to body,
  * like MobileSidebar). Reuses ProductFilters for the actual controls.
+ *
+ * Picking a category/concern closes the panel (onDone) before navigating.
+ * Dragging the price slider navigates too (?minPrice=…), which re-renders the
+ * server page and REMOUNTS this component — plain useState(false) would slam
+ * the panel shut mid-adjustment. The module-scoped flag survives the remount,
+ * so the panel only closes when the customer (or a selection) closes it.
  */
+let stayOpen = false;
+
 export default function MobileFilters({
   categories,
   concerns,
@@ -20,7 +28,11 @@ export default function MobileFilters({
   current: ActiveFilters;
   activeCount: number;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, _setOpen] = useState(() => stayOpen);
+  const setOpen = (value: boolean) => {
+    stayOpen = value;
+    _setOpen(value);
+  };
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);

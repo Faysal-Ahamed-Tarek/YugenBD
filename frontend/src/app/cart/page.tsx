@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getCart, setItemQuantity, removeFromCart, type CartItem } from "@/lib/cart";
+import {
+  getCart,
+  setItemQuantity,
+  removeFromCart,
+  splitCartRows,
+  fetchCartStock,
+  type CartItem,
+} from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 import ProductImage from "@/components/product/ProductImage";
-
-const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -22,26 +27,12 @@ export default function CartPage() {
     return () => window.removeEventListener("cart:updated", sync);
   }, []);
 
-  // Fetch current stock per product so the stepper can cap defensively.
+  // Fetch current stock per product — not shown to the customer, only used to
+  // split partially-covered lines into an in-stock row + a pre-order row.
   useEffect(() => {
     let cancelled = false;
-    const slugs = getCart().map((i) => ({ productId: i.productId, slug: i.slug }));
-    Promise.all(
-      slugs.map(async ({ productId, slug }) => {
-        try {
-          const res = await fetch(`${PUBLIC_API_URL}/products/slug/${encodeURIComponent(slug)}`);
-          if (!res.ok) return null;
-          const json = await res.json();
-          return json?.success ? { productId, stock: json.data.stock as number } : null;
-        } catch {
-          return null;
-        }
-      })
-    ).then((results) => {
-      if (cancelled) return;
-      const map: Record<string, number> = {};
-      for (const r of results) if (r) map[r.productId] = r.stock;
-      setStock(map);
+    fetchCartStock(getCart()).then((map) => {
+      if (!cancelled) setStock(map);
     });
     return () => {
       cancelled = true;
@@ -49,6 +40,9 @@ export default function CartPage() {
   }, []);
 
   const subtotal = items.reduce((sum, i) => sum + parseFloat(i.price) * i.quantity, 0);
+
+  // Shared in-stock / pre-order display split (see lib/cart.ts).
+  const rows = splitCartRows(items, stock);
 
   if (ready && items.length === 0) {
     return (
@@ -79,11 +73,13 @@ export default function CartPage() {
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Items */}
         <ul className="lg:col-span-2 divide-y divide-border border-y border-border">
-          {items.map((item) => {
-            const max = stock[item.productId];
-            const atMax = max !== undefined && item.quantity >= max;
+          {rows.map((row) => {
+            const { item } = row;
+            // The pre-order half of a split line: removing it only trims the
+            // quantity back down to what stock covers.
+            const isOverflowRow = row.preOrder && row.qty < item.quantity;
             return (
-              <li key={item.productId} className="flex gap-4 py-4">
+              <li key={`${item.productId}-${row.preOrder ? "pre" : "reg"}`} className="flex gap-4 py-4">
                 <Link
                   href={`/product/${item.slug}`}
                   className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-surface"
@@ -93,16 +89,33 @@ export default function CartPage() {
 
                 <div className="flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-2">
-                    <Link
-                      href={`/product/${item.slug}`}
-                      className="text-sm font-medium leading-snug hover:text-primary transition-colors line-clamp-2"
-                    >
-                      {item.title}
-                    </Link>
+                    <div>
+                      <Link
+                        href={`/product/${item.slug}`}
+                        className="text-sm font-medium leading-snug hover:text-primary transition-colors line-clamp-2"
+                      >
+                        {item.title}
+                      </Link>
+                      {row.preOrder ? (
+                        <span className="mt-1 inline-block rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          Pre-Order
+                        </span>
+                      ) : (
+                        <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                          In Stock
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="button"
-                      aria-label={`Remove ${item.title}`}
-                      onClick={() => removeFromCart(item.productId)}
+                      aria-label={
+                        isOverflowRow ? `Remove pre-order units of ${item.title}` : `Remove ${item.title}`
+                      }
+                      onClick={() =>
+                        isOverflowRow
+                          ? setItemQuantity(item.productId, item.quantity - row.qty)
+                          : removeFromCart(item.productId)
+                      }
                       className="p-1 text-muted hover:text-primary transition-colors"
                     >
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -114,34 +127,36 @@ export default function CartPage() {
                   <p className="mt-1 text-sm font-semibold text-primary">{formatPrice(item.price)}</p>
 
                   <div className="mt-auto flex items-center justify-between pt-3">
-                    <div className="inline-flex h-9 items-center rounded-full border border-border">
-                      <button
-                        type="button"
-                        aria-label="Decrease quantity"
-                        onClick={() => setItemQuantity(item.productId, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
-                        className="h-9 w-9 text-lg text-muted hover:text-primary disabled:opacity-40 transition-colors"
-                      >
-                        −
-                      </button>
-                      <span className="w-9 text-center text-sm font-semibold">{item.quantity}</span>
-                      <button
-                        type="button"
-                        aria-label="Increase quantity"
-                        onClick={() => setItemQuantity(item.productId, item.quantity + 1)}
-                        disabled={atMax}
-                        className="h-9 w-9 text-lg text-muted hover:text-primary disabled:opacity-40 transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
+                    {row.hasStepper ? (
+                      <div className="inline-flex h-9 items-center rounded-full border border-border">
+                        <button
+                          type="button"
+                          aria-label="Decrease quantity"
+                          onClick={() => setItemQuantity(item.productId, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          className="h-9 w-9 text-lg text-muted hover:text-primary disabled:opacity-40 transition-colors"
+                        >
+                          −
+                        </button>
+                        <span className="w-9 text-center text-sm font-semibold">{row.qty}</span>
+                        <button
+                          type="button"
+                          aria-label="Increase quantity"
+                          onClick={() => setItemQuantity(item.productId, item.quantity + 1)}
+                          className="h-9 w-9 text-lg text-muted hover:text-primary disabled:opacity-40 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="inline-flex h-9 items-center rounded-full border border-border px-4 text-sm font-semibold">
+                        Quantity {row.qty}
+                      </span>
+                    )}
                     <span className="text-sm font-semibold">
-                      {formatPrice(parseFloat(item.price) * item.quantity)}
+                      {formatPrice(parseFloat(item.price) * row.qty)}
                     </span>
                   </div>
-                  {atMax && (
-                    <p className="mt-1 text-xs text-muted">Only {max} in stock</p>
-                  )}
                 </div>
               </li>
             );

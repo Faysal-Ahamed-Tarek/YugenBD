@@ -220,7 +220,17 @@
       "Bash(curl -s -o /dev/null -w \"backend:%{http_code}\\\\n\" localhost:4000/api/v1/products/slug/naturie-moisturizing-gel-skin-conditioning-gel-63-oz-180-g)",
       "Bash(curl -s -o /dev/null -w \"health:%{http_code}\\\\n\" localhost:4000/health)",
       "Bash(curl -s \"localhost:4000/api/v1/products?limit=3\")",
-      "Bash(python3 -c \"import json,sys; print\\([p['slug'] for p in json.load\\(sys.stdin\\)['data']]\\)\")"
+      "Bash(python3 -c \"import json,sys; print\\([p['slug'] for p in json.load\\(sys.stdin\\)['data']]\\)\")",
+      "Bash(curl -s -o /dev/null -w \"backend:%{http_code} \" localhost:4000/health)",
+      "Bash(curl -s \"localhost:4000/api/v1/products?limit=50\")",
+      "Bash(curl -s -X POST localhost:4000/api/v1/orders -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(file /home/faysal/Desktop/YugenBD/frontend/public/manual-images/*.png)",
+      "Bash(python3 -c \"import PIL; print\\('PIL', PIL.__version__\\)\")",
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code} \" localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"backend:%{http_code}\\\\n\" localhost:4000/health)",
+      "Bash(curl -s localhost:4000/api/v1/hero-slides)",
+      "Bash(curl -s -o b1.png \"https://res.cloudinary.com/c2q2aeng/image/upload/v1784220003/yugenbd/hero/tnkdckrfakoewawnyarw.png\")",
+      "Bash(curl -s -o b2.png \"https://res.cloudinary.com/c2q2aeng/image/upload/v1784220296/yugenbd/hero/k0kmjwfquzkg2poc9oef.png\")"
     ]
   }
 }

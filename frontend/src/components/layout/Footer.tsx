@@ -25,10 +25,10 @@ export default function Footer() {
               width={132}
               height={32}
               priority
-              className="h-10 md:h-15 w-auto"
+              className="h-14 md:h-16 w-auto"
             />
           </Link>
-            <p className="mt-3 max-w-sm text-sm text-muted leading-relaxed">
+            <p className="mt-3 max-w-sm text-sm md:text-md text-muted leading-relaxed">
               every products is authentically sourced from japan with care and intention. we hope these j-beauty essentials bring a little more radiance to your everyday routine.
             </p>
           </div>

@@ -199,7 +199,8 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
                       >
                         {cat.name}
                       </Link>
-                      {children.length > 0 ? (
+                      {/* Chevron only when there are subcategories to expand */}
+                      {children.length > 0 && (
                         <button
                           type="button"
                           aria-label={isExpanded ? `Collapse ${cat.name}` : `Expand ${cat.name}`}
@@ -211,12 +212,6 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
                             <path d="M6 9l6 6 6-6" />
                           </svg>
                         </button>
-                      ) : (
-                        <span className="p-2.5 text-muted" aria-hidden>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M9 6l6 6-6 6" />
-                          </svg>
-                        </span>
                       )}
                     </div>
                     {children.length > 0 && isExpanded && (

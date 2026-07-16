@@ -26,12 +26,20 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
   const availableStock = product.stock;
 
   const isPreOrder = availableStock === 0;
-  // Cap quantity at stock when in stock; pre-orders have no stock cap.
-  const maxQty = availableStock > 0 ? availableStock : 99;
+  // Stock never limits the quantity: anything beyond what stock covers is
+  // taken as a pre-order (the cart/order split the line automatically).
+  const maxQty = 99;
 
   const changeQuantity = (delta: number) => {
     setQuantity((q) => Math.min(Math.max(1, q + delta), maxQty));
   };
+
+  // Expected ship date shown for pre-orders: 15 days from today.
+  const restockDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   const orderNow = () => {
     addToCart(
@@ -56,7 +64,8 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
       {/* Pre-order notice */}
       {isPreOrder && (
         <div className="mb-4 rounded-lg border border-primary/40 bg-primary-light px-3 py-2.5 text-sm text-primary">
-          Currently out of stock — order now and we&apos;ll ship it as soon as it&apos;s restocked.
+          Currently out of stock — order now as a pre-order and we&apos;ll ship it by{" "}
+          <strong>{restockDate}</strong>.
         </div>
       )}
 

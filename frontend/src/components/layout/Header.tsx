@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getCategories } from "@/lib/api";
 import MobileSidebar from "./MobileSidebar";
 import SearchBar from "./SearchBar";
 import CartButton from "./CartButton";
+import LogoLink from "./LogoLink";
 
 /**
  * Server component: categories are fetched on the server so the nav is in
@@ -16,18 +16,9 @@ export default async function Header() {
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
       <div className="mx-auto max-w-7xl px-4">
-        <div className="flex h-16 md:h-20 items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="/" className="shrink-0" aria-label="YugenBD home">
-            <Image
-              src="/manual-images/YugenBdTransparent.png"
-              alt="YugenBD"
-              width={132}
-              height={32}
-              priority
-              className="h-12 md:h-14 w-auto"
-            />
-          </Link>
+        <div className="flex h-16 md:h-17 items-center justify-between gap-4">
+          {/* Logo — scrolls to the top when already on the home page */}
+          <LogoLink />
 
           {/* Desktop search */}
           <div className="hidden md:block flex-1 max-w-md">

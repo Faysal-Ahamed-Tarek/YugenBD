@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getCart, clearCart, type CartItem } from "@/lib/cart";
+import { getCart, clearCart, splitCartRows, fetchCartStock, type CartItem } from "@/lib/cart";
 import { createOrder } from "@/lib/api";
 import { getFreshAccessToken, authApi } from "@/lib/authClient";
 import { useAuth } from "@/lib/auth";
@@ -48,6 +48,9 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
+  // Stock per product — used only to mirror the cart's in-stock / pre-order
+  // row split in the order summary (the backend splits authoritatively).
+  const [stock, setStock] = useState<Record<string, number>>({});
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -80,6 +83,17 @@ export default function CheckoutPage() {
   // Load divisions for the address selector.
   useEffect(() => {
     fetchLocations("/locations/divisions").then(setDivisions);
+  }, []);
+
+  // Fetch stock for the summary's pre-order split (same pattern as /cart).
+  useEffect(() => {
+    let cancelled = false;
+    fetchCartStock(getCart()).then((map) => {
+      if (!cancelled) setStock(map);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Signed-in customers: prefill the form from their saved shipping address
@@ -141,6 +155,10 @@ export default function CheckoutPage() {
     () => items.reduce((sum, i) => sum + parseFloat(i.price) * i.quantity, 0),
     [items]
   );
+
+  // Summary rows: quantities beyond stock show as a separate Pre-Order row of
+  // the same product, mirroring the cart page and the final order lines.
+  const summaryRows = splitCartRows(items, stock);
   const selected = DELIVERY_OPTIONS.find((o) => o.zone === zone) ?? null;
   const total = selected ? subtotal + selected.fee : null;
 
@@ -399,19 +417,30 @@ export default function CheckoutPage() {
             <h2 className="text-lg font-semibold">Order Summary</h2>
 
             <ul className="mt-4 space-y-3">
-              {items.map((item) => (
-                <li key={item.productId} className="flex gap-3">
+              {summaryRows.map((row) => (
+                <li key={`${row.item.productId}-${row.preOrder ? "pre" : "reg"}`} className="flex gap-3">
                   <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface">
-                    <ProductImage src={item.imageUrl} alt={item.title} sizes="56px" />
+                    <ProductImage src={row.item.imageUrl} alt={row.item.title} sizes="56px" />
                   </span>
                   <span className="flex-1 text-sm">
                     <span className="line-clamp-1">
-                      {item.title}
+                      {row.item.title}
                     </span>
-                    <span className="text-muted">Qty {item.quantity}</span>
+                    <span className="text-muted">
+                      Quantity {row.qty}
+                      {row.preOrder ? (
+                        <span className="ml-2 inline-block rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold align-middle text-white">
+                          Pre-Order
+                        </span>
+                      ) : (
+                        <span className="ml-2 inline-block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold align-middle text-green-700">
+                          In Stock
+                        </span>
+                      )}
+                    </span>
                   </span>
                   <span className="text-sm font-semibold">
-                    {formatPrice(parseFloat(item.price) * item.quantity)}
+                    {formatPrice(parseFloat(row.item.price) * row.qty)}
                   </span>
                 </li>
               ))}

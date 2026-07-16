@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { getCart, setItemQuantity, removeFromCart, type CartItem } from "@/lib/cart";
+import {
+  getCart,
+  setItemQuantity,
+  removeFromCart,
+  splitCartRows,
+  fetchCartStock,
+  type CartItem,
+} from "@/lib/cart";
 import { formatPrice } from "@/lib/format";
 import ProductImage from "@/components/product/ProductImage";
 
@@ -27,6 +34,20 @@ export default function CartSidebar({ open, onClose }: { open: boolean; onClose:
     window.addEventListener("cart:updated", sync);
     return () => window.removeEventListener("cart:updated", sync);
   }, []);
+
+  // Live stock (fetched when the drawer opens) drives the same in-stock /
+  // pre-order row split as the cart page. Not shown as a count anywhere.
+  const [stock, setStock] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    fetchCartStock(getCart()).then((map) => {
+      if (!cancelled) setStock(map);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   // Lock body scroll while the drawer is open
   useEffect(() => {
@@ -112,67 +133,98 @@ export default function CartSidebar({ open, onClose }: { open: boolean; onClose:
           </div>
         ) : (
           <>
-            {/* Items — scrolls independently */}
+            {/* Items — scrolls independently. Same rows as the cart page:
+                quantities beyond stock split into an In Stock row plus a
+                Pre-Order row of the same product. */}
             <ul className="flex-1 overflow-y-auto divide-y divide-border px-4">
-              {items.map((item) => (
-                <li key={item.productId} className="flex gap-3 py-4">
-                  <Link
-                    href={`/product/${item.slug}`}
-                    onClick={onClose}
-                    className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface"
-                  >
-                    <ProductImage src={item.imageUrl} alt={item.title} sizes="80px" />
-                  </Link>
+              {splitCartRows(items, stock).map((row) => {
+                const { item } = row;
+                const isOverflowRow = row.preOrder && row.qty < item.quantity;
+                return (
+                  <li key={`${item.productId}-${row.preOrder ? "pre" : "reg"}`} className="flex gap-3 py-4">
+                    <Link
+                      href={`/product/${item.slug}`}
+                      onClick={onClose}
+                      className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-surface"
+                    >
+                      <ProductImage src={item.imageUrl} alt={item.title} sizes="80px" />
+                    </Link>
 
-                  <div className="flex flex-1 flex-col">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link
-                        href={`/product/${item.slug}`}
-                        onClick={onClose}
-                        className="text-sm font-medium leading-snug hover:text-primary transition-colors line-clamp-2"
-                      >
-                        {item.title}
-                      </Link>
-                      <button
-                        type="button"
-                        aria-label={`Remove ${item.title}`}
-                        onClick={() => removeFromCart(item.productId)}
-                        className="p-1 text-muted hover:text-primary transition-colors"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" />
-                        </svg>
-                      </button>
-                    </div>
-
-                    <div className="mt-auto flex items-center justify-between pt-2">
-                      <div className="inline-flex h-8 items-center rounded-full border border-border">
+                    <div className="flex flex-1 flex-col">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <Link
+                            href={`/product/${item.slug}`}
+                            onClick={onClose}
+                            className="text-sm font-medium leading-snug hover:text-primary transition-colors line-clamp-2"
+                          >
+                            {item.title}
+                          </Link>
+                          {row.preOrder ? (
+                            <span className="mt-1 inline-block rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold text-white">
+                              Pre-Order
+                            </span>
+                          ) : (
+                            <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                              In Stock
+                            </span>
+                          )}
+                        </div>
                         <button
                           type="button"
-                          aria-label="Decrease quantity"
-                          onClick={() => setItemQuantity(item.productId, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="px-2.5 text-muted hover:text-primary disabled:opacity-40 transition-colors"
+                          aria-label={
+                            isOverflowRow
+                              ? `Remove pre-order units of ${item.title}`
+                              : `Remove ${item.title}`
+                          }
+                          onClick={() =>
+                            isOverflowRow
+                              ? setItemQuantity(item.productId, item.quantity - row.qty)
+                              : removeFromCart(item.productId)
+                          }
+                          className="p-1 text-muted hover:text-primary transition-colors"
                         >
-                          −
-                        </button>
-                        <span className="min-w-[1.5rem] text-center text-sm font-medium">{item.quantity}</span>
-                        <button
-                          type="button"
-                          aria-label="Increase quantity"
-                          onClick={() => setItemQuantity(item.productId, item.quantity + 1)}
-                          className="px-2.5 text-muted hover:text-primary transition-colors"
-                        >
-                          +
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" />
+                          </svg>
                         </button>
                       </div>
-                      <p className="text-sm font-semibold text-primary">
-                        {formatPrice(parseFloat(item.price) * item.quantity)}
-                      </p>
+
+                      <div className="mt-auto flex items-center justify-between pt-2">
+                        {row.hasStepper ? (
+                          <div className="inline-flex h-8 items-center rounded-full border border-border">
+                            <button
+                              type="button"
+                              aria-label="Decrease quantity"
+                              onClick={() => setItemQuantity(item.productId, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                              className="px-2.5 text-muted hover:text-primary disabled:opacity-40 transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="min-w-[1.5rem] text-center text-sm font-medium">{row.qty}</span>
+                            <button
+                              type="button"
+                              aria-label="Increase quantity"
+                              onClick={() => setItemQuantity(item.productId, item.quantity + 1)}
+                              className="px-2.5 text-muted hover:text-primary transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="inline-flex h-8 items-center rounded-full border border-border px-3 text-sm font-medium">
+                            Quantity {row.qty}
+                          </span>
+                        )}
+                        <p className="text-sm font-semibold text-primary">
+                          {formatPrice(parseFloat(item.price) * row.qty)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
 
             {/* Footer: subtotal + View Cart / Checkout in one row */}

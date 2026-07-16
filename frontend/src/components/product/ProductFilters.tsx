@@ -14,12 +14,17 @@ export interface ActiveFilters {
   q?: string;
 }
 
+/* Fixed slider bounds — catalog prices live comfortably inside ৳0–৳5,000. */
+const PRICE_MIN = 0;
+const PRICE_MAX = 5000;
+const PRICE_STEP = 100;
+
 /**
  * Filter controls (category, concern, price range). Shared by the desktop
- * sidebar and the mobile slide-over. Selections apply IMMEDIATELY — picking a
- * category/concern writes it to the URL and re-fetches (no "Apply" button);
- * price applies on blur/Enter. Each group is a collapsible accordion.
- * "Clear all" resets to /products. `onDone` closes the mobile panel.
+ * sidebar and the mobile slide-over. Picking a category/concern closes the
+ * mobile panel FIRST (via `onDone`), then navigates — the customer sees the
+ * results immediately. Price is a dual-thumb slider that applies on release.
+ * "Clear all" resets to /products.
  */
 export default function ProductFilters({
   categories,
@@ -33,11 +38,15 @@ export default function ProductFilters({
   onDone?: () => void;
 }) {
   const router = useRouter();
-  const [minPrice, setMinPrice] = useState(current.minPrice ?? "");
-  const [maxPrice, setMaxPrice] = useState(current.maxPrice ?? "");
+  const clampPrice = (v: string | undefined, fallback: number) => {
+    const n = v ? parseInt(v, 10) : NaN;
+    return Number.isNaN(n) ? fallback : Math.min(PRICE_MAX, Math.max(PRICE_MIN, n));
+  };
+  const [minPrice, setMinPrice] = useState(() => clampPrice(current.minPrice, PRICE_MIN));
+  const [maxPrice, setMaxPrice] = useState(() => clampPrice(current.maxPrice, PRICE_MAX));
 
   // Merge a change into the current filters and push to the URL (server refetch).
-  const push = (next: Partial<ActiveFilters>, close = false) => {
+  const push = (next: Partial<ActiveFilters>) => {
     const merged = { ...current, ...next };
     const qs = new URLSearchParams();
     if (merged.q) qs.set("q", merged.q);
@@ -46,71 +55,109 @@ export default function ProductFilters({
     if (merged.minPrice) qs.set("minPrice", String(merged.minPrice));
     if (merged.maxPrice) qs.set("maxPrice", String(merged.maxPrice));
     router.push(qs.size > 0 ? `/products?${qs.toString()}` : "/products");
-    if (close) onDone?.();
+  };
+
+  // Category/concern: close the mobile panel first, then apply.
+  const select = (next: Partial<ActiveFilters>) => {
+    onDone?.();
+    push(next);
+  };
+
+  // Slider release: thumbs at the outer bounds mean "no limit". Only commits
+  // when the range actually moved (so tapping a thumb doesn't navigate), and
+  // like category/concern it closes the mobile panel before showing results.
+  const commitPrice = () => {
+    const appliedMin = clampPrice(current.minPrice, PRICE_MIN);
+    const appliedMax = clampPrice(current.maxPrice, PRICE_MAX);
+    if (minPrice === appliedMin && maxPrice === appliedMax) return;
+    onDone?.();
+    push({
+      minPrice: minPrice > PRICE_MIN ? String(minPrice) : undefined,
+      maxPrice: maxPrice < PRICE_MAX ? String(maxPrice) : undefined,
+    });
   };
 
   const clearAll = () => {
-    setMinPrice("");
-    setMaxPrice("");
-    router.push("/products");
+    setMinPrice(PRICE_MIN);
+    setMaxPrice(PRICE_MAX);
     onDone?.();
+    router.push("/products");
   };
-
-  const priceInput =
-    "w-full h-10 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition";
 
   return (
     <div className="space-y-3">
+      <FilterGroup label="Price (৳)">
+        {/* Dual-thumb slider: drag either end; the filter applies on release.
+            Thumbs resting at the outer edges mean "no min/max". */}
+        <div className="px-1 pt-1">
+          <div className="flex items-center justify-between text-sm font-medium">
+            <span>{formatTaka(minPrice)}</span>
+            <span>
+              {formatTaka(maxPrice)}
+              {maxPrice === PRICE_MAX ? "+" : ""}
+            </span>
+          </div>
+
+          <div className="dual-range relative mt-3 h-5">
+            {/* Track + selected-range highlight */}
+            <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-border" />
+            <div
+              className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-primary"
+              style={{
+                left: `${(minPrice / PRICE_MAX) * 100}%`,
+                right: `${100 - (maxPrice / PRICE_MAX) * 100}%`,
+              }}
+            />
+            <input
+              type="range"
+              aria-label="Minimum price"
+              min={PRICE_MIN}
+              max={PRICE_MAX}
+              step={PRICE_STEP}
+              value={minPrice}
+              onChange={(e) => setMinPrice(Math.min(Number(e.target.value), maxPrice - PRICE_STEP))}
+              onPointerUp={commitPrice}
+              onKeyUp={commitPrice}
+              onTouchEnd={commitPrice}
+            />
+            <input
+              type="range"
+              aria-label="Maximum price"
+              min={PRICE_MIN}
+              max={PRICE_MAX}
+              step={PRICE_STEP}
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(Math.max(Number(e.target.value), minPrice + PRICE_STEP))}
+              onPointerUp={commitPrice}
+              onKeyUp={commitPrice}
+              onTouchEnd={commitPrice}
+            />
+          </div>
+        </div>
+      </FilterGroup>
+
       <FilterGroup label="Category">
-        <RadioRow label="All categories" checked={!current.category} onSelect={() => push({ category: undefined }, true)} />
+        <RadioRow label="All categories" checked={!current.category} onSelect={() => select({ category: undefined })} />
         {categories.map((cat) => (
           <RadioRow
             key={cat.id}
             label={cat.name}
             checked={current.category === cat.slug}
-            onSelect={() => push({ category: cat.slug }, true)}
+            onSelect={() => select({ category: cat.slug })}
           />
         ))}
       </FilterGroup>
 
       <FilterGroup label="Concern">
-        <RadioRow label="All concerns" checked={!current.concern} onSelect={() => push({ concern: undefined }, true)} />
+        <RadioRow label="All concerns" checked={!current.concern} onSelect={() => select({ concern: undefined })} />
         {concerns.map((c) => (
           <RadioRow
             key={c.id}
             label={c.title}
             checked={current.concern === c.slug}
-            onSelect={() => push({ concern: c.slug }, true)}
+            onSelect={() => select({ concern: c.slug })}
           />
         ))}
-      </FilterGroup>
-
-      <FilterGroup label="Price (৳)">
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-            onBlur={() => push({ minPrice: minPrice.trim() || undefined })}
-            onKeyDown={(e) => e.key === "Enter" && push({ minPrice: minPrice.trim() || undefined })}
-            placeholder="Min"
-            className={priceInput}
-          />
-          <span className="text-muted">–</span>
-          <input
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            onBlur={() => push({ maxPrice: maxPrice.trim() || undefined })}
-            onKeyDown={(e) => e.key === "Enter" && push({ maxPrice: maxPrice.trim() || undefined })}
-            placeholder="Max"
-            className={priceInput}
-          />
-        </div>
       </FilterGroup>
 
       <button
@@ -122,6 +169,11 @@ export default function ProductFilters({
       </button>
     </div>
   );
+}
+
+/** ৳-formatted slider value (no decimals, en-BD thousands separators). */
+function formatTaka(value: number): string {
+  return `৳${value.toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;
 }
 
 /** Collapsible filter section — click the header to open/close (chevron icon). */

@@ -26,10 +26,11 @@ function productPrice(product: { basePrice: string; discountPrice: string | null
 
 /**
  * Shared order builder: validates products, computes authoritative prices +
- * delivery, decrements stock (per-weight when applicable), and inserts the
- * order atomically. Items whose available stock is exactly 0 are accepted as
- * PRE-ORDERS (isPreOrder = true, no decrement); items with 1..stock-1 that
- * exceed availability are rejected.
+ * delivery, decrements stock, and inserts the order atomically. Stock never
+ * blocks an order: whatever stock can cover ships as a regular line, and any
+ * overflow becomes a separate PRE-ORDER line (isPreOrder = true) for the same
+ * product — so requesting 10 with 5 in stock yields two order_items rows
+ * (5 regular + 5 pre-order) and only the covered 5 are decremented.
  */
 async function buildAndInsertOrder(
   input: Omit<CreateManualOrderInput, "status">,
@@ -41,42 +42,43 @@ async function buildAndInsertOrder(
   const byId = new Map(found.map((p) => [p.id, p]));
   const mainImages = await orderRepository.findMainImagesByProductIds(productIds);
 
-  // Sum requested quantity per stock bucket (product or weight) so multiple
-  // lines drawing on the same bucket are validated against the true total.
-  const requestedByBucket = new Map<string, number>();
-
   const resolved = input.items.map((item) => {
     const product = byId.get(item.productId);
     if (!product || product.status !== "published") {
       throw ApiError.badRequest(`A product in the order is no longer available.`);
     }
     const variant = { unitPrice: productPrice(product), availableStock: product.stock };
-    const bucketKey = product.id;
-    requestedByBucket.set(bucketKey, (requestedByBucket.get(bucketKey) ?? 0) + item.quantity);
-    return { item, product, variant, bucketKey };
+    return { item, product, variant, bucketKey: product.id };
   });
 
-  // Pre-order applies only when a bucket's stock is exactly 0. When stock is
-  // >0 but less than the total requested for that bucket, reject.
-  const preOrderBuckets = new Set<string>();
-  for (const { product, variant, bucketKey } of resolved) {
-    const requested = requestedByBucket.get(bucketKey)!;
-    if (variant.availableStock === 0) {
-      preOrderBuckets.add(bucketKey);
-    } else if (requested > variant.availableStock) {
-      throw ApiError.badRequest(`"${product.title}" only has ${variant.availableStock} left in stock.`);
-    }
+  // Allocate available stock per bucket in line order; whatever a line can't
+  // cover from stock is split off into its own pre-order line.
+  const remainingByBucket = new Map<string, number>();
+  for (const { variant, bucketKey } of resolved) {
+    if (!remainingByBucket.has(bucketKey)) remainingByBucket.set(bucketKey, variant.availableStock);
   }
 
-  const lineItems = resolved.map(({ item, product, variant, bucketKey }) => ({
-    productId: product.id,
-    title: product.title,
-    price: money(variant.unitPrice),
-    imageUrl: mainImages.get(product.id) ?? null,
-    quantity: item.quantity,
-    isPreOrder: preOrderBuckets.has(bucketKey),
-    lineTotal: variant.unitPrice * item.quantity,
-  }));
+  const lineItems = resolved.flatMap(({ item, product, variant, bucketKey }) => {
+    const remaining = remainingByBucket.get(bucketKey)!;
+    const inStockQty = Math.min(item.quantity, remaining);
+    const preOrderQty = item.quantity - inStockQty;
+    remainingByBucket.set(bucketKey, remaining - inStockQty);
+
+    const base = {
+      productId: product.id,
+      title: product.title,
+      price: money(variant.unitPrice),
+      imageUrl: mainImages.get(product.id) ?? null,
+    };
+    const lines = [];
+    if (inStockQty > 0) {
+      lines.push({ ...base, quantity: inStockQty, isPreOrder: false, lineTotal: variant.unitPrice * inStockQty });
+    }
+    if (preOrderQty > 0) {
+      lines.push({ ...base, quantity: preOrderQty, isPreOrder: true, lineTotal: variant.unitPrice * preOrderQty });
+    }
+    return lines;
+  });
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
   const { fee, estimate } = DELIVERY[input.deliveryZone];
@@ -84,11 +86,14 @@ async function buildAndInsertOrder(
 
   const isBkash = input.paymentMethod === "bkash";
 
-  // Stock decrements: skip pre-order buckets (stock already 0). One entry per
-  // product with the total quantity to subtract.
-  const decrements = [...requestedByBucket.entries()]
-    .filter(([productId]) => !preOrderBuckets.has(productId))
-    .map(([productId, quantity]) => ({ productId, quantity }));
+  // Stock decrements: only the covered (non-pre-order) quantity per product —
+  // initial stock minus whatever allocation is left.
+  const decrements = [...remainingByBucket.entries()]
+    .map(([productId, remaining]) => ({
+      productId,
+      quantity: byId.get(productId)!.stock - remaining,
+    }))
+    .filter((d) => d.quantity > 0);
 
   return orderRepository.createWithItems(
     {
