@@ -85,8 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(async (input: RegisterInput) => {
     try {
-      const res = await authApi.post<{ user: AuthUser; accessToken: string }>("/auth/register", input);
-      applySession(res.data.user, res.data.accessToken);
+      // No session on register — the account must verify its email first;
+      // the register page shows a "check your email" screen instead.
+      await authApi.post<{ user: AuthUser; message: string }>("/auth/register", input);
     } catch (err) {
       throw new Error(err instanceof ApiError ? err.message : "Registration failed");
     }

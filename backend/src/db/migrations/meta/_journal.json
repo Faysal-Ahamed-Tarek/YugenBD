@@ -127,6 +127,13 @@
       "when": 1784191031649,
       "tag": "0017_search_trgm",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784218751689,
+      "tag": "0018_email_verified",
+      "breakpoints": true
     }
   ]
 }

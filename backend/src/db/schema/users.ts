@@ -10,6 +10,9 @@ export const users = pgTable(
     passwordHash: varchar("password_hash", { length: 255 }).notNull(),
     phone: varchar("phone", { length: 20 }).notNull(),
     phoneVerified: boolean("phone_verified").notNull().default(false),
+    // Customers must click the emailed verification link before they can log
+    // in. Pre-existing accounts were backfilled to true (migration 0018).
+    emailVerified: boolean("email_verified").notNull().default(false),
     role: userRoleEnum("role").notNull().default("customer"),
     isActive: boolean("is_active").notNull().default(true),
     // Bumped on password change to invalidate previously issued refresh tokens.

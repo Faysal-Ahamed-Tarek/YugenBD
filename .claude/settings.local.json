@@ -206,7 +206,21 @@
       "Bash(curl -s \"localhost:4000/api/v1/products?search=shmpoo&limit=12\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('meta'\\), len\\(d['data']\\)\\)\")",
       "Bash(curl -s -X POST localhost:4000/api/v1/auth/customer-login -H \"Content-Type: application/json\" -d '{\"identifier\":\"01711112222\",\"password\":\"testpass123\"}')",
-      "Bash(curl -s -X POST localhost:4000/api/v1/auth/customer-login -H \"Content-Type: application/json\" -d '{\"identifier\":\"01711112222\",\"password\":\"testpass456\"}')"
+      "Bash(curl -s -X POST localhost:4000/api/v1/auth/customer-login -H \"Content-Type: application/json\" -d '{\"identifier\":\"01711112222\",\"password\":\"testpass456\"}')",
+      "Bash(curl -s -X POST localhost:4000/api/v1/auth/forgot-password -H \"Content-Type: application/json\" -d '{\"email\":\"prefill-test@example.com\"}')",
+      "Bash(curl -s -X POST localhost:4000/api/v1/auth/forgot-password -H \"Content-Type: application/json\" -d '{\"email\":\"nobody@nowhere.com\"}')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" localhost:3000/login)",
+      "Bash(curl -s -X POST localhost:4000/api/v1/auth/customer-login -H \"Content-Type: application/json\" -d '{\"identifier\":\"01711112222\",\"password\":\"testpass789\"}')",
+      "Bash(curl -s -o /dev/null -w \"backend:%{http_code} \" localhost:4000/api/v1/categories)",
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" localhost:3000/login)",
+      "Bash(curl -s -X POST localhost:4000/api/v1/auth/resend-verification -H \"Content-Type: application/json\" -d '{\"identifier\":\"01722223333\"}')",
+      "Bash(sed -n 1,120p /home/faysal/Desktop/YugenBD/frontend/src/app/product/[slug]/page.tsx)",
+      "Bash(sed -n 120,220p /home/faysal/Desktop/YugenBD/frontend/src/app/product/[slug]/page.tsx; echo \"LINES: $\\(wc -l < /home/faysal/Desktop/YugenBD/frontend/src/app/product/[slug]/page.tsx\\)\")",
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" localhost:3000)",
+      "Bash(curl -s -o /dev/null -w \"backend:%{http_code}\\\\n\" localhost:4000/api/v1/products/slug/naturie-moisturizing-gel-skin-conditioning-gel-63-oz-180-g)",
+      "Bash(curl -s -o /dev/null -w \"health:%{http_code}\\\\n\" localhost:4000/health)",
+      "Bash(curl -s \"localhost:4000/api/v1/products?limit=3\")",
+      "Bash(python3 -c \"import json,sys; print\\([p['slug'] for p in json.load\\(sys.stdin\\)['data']]\\)\")"
     ]
   }
 }

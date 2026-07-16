@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductBySlug, formatPrice } from "@/lib/api";
+import { getProductBySlug, getProducts, formatPrice } from "@/lib/api";
 import type { ProductDetail } from "@/types";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductActions from "@/components/product/ProductActions";
 import ProductAccordion, { type AccordionSection } from "@/components/product/ProductAccordion";
+import ProductCarousel from "@/components/product/ProductCarousel";
 import ReviewsSection from "@/components/product/ReviewsSection";
 import { sanitizeHtml, hasContent } from "@/lib/sanitize";
 
@@ -85,6 +86,16 @@ export default async function ProductPage({ params }: PageProps) {
 
   const primaryCategory = product.categories[0];
 
+  // Post-review sections: "Recommended for you" pulls best sellers; "Related
+  // products" pulls the product's primary category. Both exclude the product
+  // being viewed. Fetched in parallel; each renders nothing when empty.
+  const [bestSellers, sameCategory] = await Promise.all([
+    getProducts({ categorySlug: "best-seller", limit: 9 }),
+    primaryCategory ? getProducts({ categorySlug: primaryCategory.slug, limit: 9 }) : Promise.resolve([]),
+  ]);
+  const recommended = bestSellers.filter((p) => p.id !== product.id);
+  const related = sameCategory.filter((p) => p.id !== product.id);
+
   // shortDescription is admin rich text (HTML) — sanitize on the server and
   // render as HTML (same pattern as the accordion), not as escaped text.
   const shortDescriptionHtml = sanitizeHtml(product.shortDescription);
@@ -99,6 +110,7 @@ export default async function ProductPage({ params }: PageProps) {
   ].filter((section) => hasContent(section.content));
 
   return (
+    <>
     <div className="mx-auto max-w-7xl px-4 py-4 md:py-6">
       <script
         type="application/ld+json"
@@ -161,7 +173,7 @@ export default async function ProductPage({ params }: PageProps) {
               the default <p> margins so it sits flush with the price/title layout. */}
           {hasContent(shortDescriptionHtml) && (
             <div
-              className="rich-text rich-text-inline mt-4 text-[20px] leading-relaxed text-foreground"
+              className="rich-text rich-text-inline mt-4 text-[18px] md:text-[20px] leading-relaxed text-foreground"
               dangerouslySetInnerHTML={{ __html: shortDescriptionHtml }}
             />
           )}
@@ -179,5 +191,21 @@ export default async function ProductPage({ params }: PageProps) {
 
       <ReviewsSection productId={product.id} productTitle={product.title} />
     </div>
+
+    {/* Post-review discovery sections (ProductCarousel brings its own
+        max-w-7xl px-4 wrapper, so these sit outside the page container). */}
+    <ProductCarousel
+      title="Recommended for you"
+      products={recommended}
+      viewAllHref="/category/best-seller"
+    />
+    {primaryCategory && (
+      <ProductCarousel
+        title="Related products"
+        products={related}
+        viewAllHref={`/category/${primaryCategory.slug}`}
+      />
+    )}
+    </>
   );
 }

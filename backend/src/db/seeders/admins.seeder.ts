@@ -37,6 +37,7 @@ export async function seedAdmins() {
       passwordHash,
       phone: admin.phone,
       phoneVerified: true,
+      emailVerified: true,
       role: "admin",
       isActive: true,
     });

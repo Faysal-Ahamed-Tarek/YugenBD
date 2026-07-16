@@ -37,6 +37,7 @@ export default function RegisterPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") router.replace("/account");
@@ -86,7 +87,8 @@ export default function RegisterPage() {
         upazilaId,
         area: area.trim(),
       });
-      router.push("/account");
+      // Account created but unverified — show the "check your email" screen.
+      setRegistered(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -98,6 +100,31 @@ export default function RegisterPage() {
     "w-full h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary-light";
   const selectClass =
     "w-full h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed";
+
+  if (registered) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-10 md:py-16 text-center">
+        <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-700">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 6h16v12H4z" />
+            <path d="M4 7l8 6 8-6" />
+          </svg>
+        </span>
+        <h1 className="mt-4 text-2xl font-semibold">Confirm your email</h1>
+        <p className="mt-2 text-base text-muted">
+          We&apos;ve sent a verification link to{" "}
+          <strong className="text-foreground">{email.trim()}</strong>. Click it to activate your
+          account — you won&apos;t be able to log in until then. The link expires in 24 hours.
+        </p>
+        <Link
+          href="/login"
+          className="mt-6 inline-block rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+        >
+          Go to Log in
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-md px-4 py-10 md:py-16">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { authApi } from "@/lib/authClient";
 
 const BD_PHONE = /^01[3-9]\d{8}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,6 +16,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Offered when login is blocked by the email-verification check.
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resent, setResent] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") router.replace("/account");
@@ -23,6 +27,8 @@ export default function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNeedsVerification(false);
+    setResent(false);
     const id = identifier.trim();
     if (!BD_PHONE.test(id) && !EMAIL.test(id)) {
       return setError("Enter your mobile number (01XXXXXXXXX) or email.");
@@ -33,9 +39,21 @@ export default function LoginPage() {
       await login(id, password);
       router.push("/account");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const message = err instanceof Error ? err.message : "Login failed";
+      setError(message);
+      if (message.toLowerCase().includes("verify your email")) setNeedsVerification(true);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    setResent(false);
+    try {
+      await authApi.post("/auth/resend-verification", { identifier: identifier.trim() });
+      setResent(true);
+    } catch {
+      /* generic endpoint — a failure here just leaves the button available */
     }
   };
 
@@ -56,7 +74,12 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label className="block text-base font-medium mb-1.5">Password</label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="block text-base font-medium">Password</label>
+            <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <input
             type="password"
             value={password}
@@ -64,7 +87,25 @@ export default function LoginPage() {
             className="w-full h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
           />
         </div>
-        {error && <p className="rounded-lg bg-primary-light px-3 py-2 text-base text-primary">{error}</p>}
+        {error && (
+          <div className="rounded-lg bg-primary-light px-3 py-2 text-base text-primary">
+            <p>{error}</p>
+            {needsVerification &&
+              (resent ? (
+                <p className="mt-1.5 text-sm">
+                  A new verification link has been sent. Check your inbox.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  className="mt-1.5 text-sm font-semibold underline hover:no-underline"
+                >
+                  Resend verification email
+                </button>
+              ))}
+          </div>
+        )}
         <button
           type="submit"
           disabled={submitting}

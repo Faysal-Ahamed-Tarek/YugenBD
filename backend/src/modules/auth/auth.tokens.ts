@@ -56,6 +56,28 @@ export function verifyPasswordResetToken(token: string, passwordHash: string): P
   return jwt.verify(token, resetSecret(passwordHash)) as PasswordResetPayload;
 }
 
+/* ───────────── Email-verification tokens (emailed links) ─────────────
+ * Plain signed JWT — verifying twice is harmless (idempotent flip to true),
+ * so single-use construction isn't needed here. */
+
+export interface EmailVerifyPayload {
+  userId: string;
+  purpose: "email_verify";
+}
+
+export function signEmailVerifyToken(userId: string): string {
+  const payload: EmailVerifyPayload = { userId, purpose: "email_verify" };
+  return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: "24h" });
+}
+
+export function verifyEmailVerifyToken(token: string): EmailVerifyPayload {
+  const payload = jwt.verify(token, env.JWT_ACCESS_SECRET) as Partial<EmailVerifyPayload>;
+  if (payload.purpose !== "email_verify" || typeof payload.userId !== "string") {
+    throw new Error("Wrong token purpose");
+  }
+  return payload as EmailVerifyPayload;
+}
+
 export const REFRESH_COOKIE = "yugenbd_refresh";
 
 /** Cookie options for the refresh token — httpOnly, lax, path-scoped to auth. */
