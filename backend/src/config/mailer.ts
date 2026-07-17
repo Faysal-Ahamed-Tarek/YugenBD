@@ -21,10 +21,66 @@ const transporter = smtpConfigured
       port: env.SMTP_PORT,
       secure: env.SMTP_PORT === 465,
       auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+      // Fail fast instead of hanging ~2 min when the VPS blocks outbound SMTP.
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
     })
   : null;
 
+// On boot, say plainly whether email is configured and (if so) whether the
+// SMTP login/connection actually works — so `pm2 logs` reveals the problem
+// without waiting for a registration to fail.
+if (!transporter) {
+  console.warn(
+    "[mailer] SMTP is NOT configured (SMTP_USER / SMTP_PASS missing from env). " +
+      "Emails will be logged to the console instead of sent."
+  );
+} else {
+  transporter.verify().then(
+    () => console.log(`[mailer] SMTP ready — authenticated as ${env.SMTP_USER}`),
+    (err) =>
+      console.error(
+        `[mailer] SMTP verify FAILED for ${env.SMTP_USER}: ${err?.message ?? err}. ` +
+          "Common causes: VPS blocks outbound port " +
+          env.SMTP_PORT +
+          ", wrong Gmail App Password, or 2FA not enabled."
+      )
+  );
+}
+
 const from = () => env.SMTP_FROM ?? `"YugenBD" <${env.SMTP_USER}>`;
+
+/** Send + log the real outcome. Never lets a send failure crash the caller. */
+async function send(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  link: string;
+  kind: string;
+}): Promise<void> {
+  if (!transporter) {
+    console.log(`[mailer] SMTP not configured. ${opts.kind} link for ${opts.to}:\n${opts.link}`);
+    return;
+  }
+  try {
+    const info = await transporter.sendMail({
+      from: from(),
+      to: opts.to,
+      replyTo: env.SMTP_USER,
+      subject: opts.subject,
+      text: opts.text,
+      html: opts.html,
+    });
+    console.log(`[mailer] Sent ${opts.kind} to ${opts.to} (id ${info.messageId})`);
+  } catch (err) {
+    // Log the real reason but DON'T rethrow — a mail outage shouldn't 500 the
+    // registration/forgot-password request. The user can use "resend".
+    console.error(
+      `[mailer] FAILED to send ${opts.kind} to ${opts.to}: ${(err as Error)?.message ?? err}`
+    );
+  }
+}
 
 /** Shared transactional layout: greeting, body, button + visible URL, footer. */
 function layout(opts: {
@@ -82,12 +138,7 @@ export async function sendVerificationEmail(
       "This link expires in 24 hours. You can't log in until your email is verified. If you didn't create this account, you can ignore this email.",
   });
 
-  if (!transporter) {
-    console.log(`[mailer] SMTP not configured. Verification link for ${to}:\n${verifyLink}`);
-    return;
-  }
-
-  await transporter.sendMail({ from: from(), to, replyTo: env.SMTP_USER, subject, text, html });
+  await send({ to, subject, text, html, link: verifyLink, kind: "verification" });
 }
 
 export async function sendPasswordResetEmail(
@@ -116,11 +167,5 @@ export async function sendPasswordResetEmail(
       "This link expires in 30 minutes. If you didn't request this, you can safely ignore this email — your password stays unchanged.",
   });
 
-  if (!transporter) {
-    // Dev fallback: no SMTP creds — surface the link in the server log.
-    console.log(`[mailer] SMTP not configured. Password reset link for ${to}:\n${resetLink}`);
-    return;
-  }
-
-  await transporter.sendMail({ from: from(), to, replyTo: env.SMTP_USER, subject, text, html });
+  await send({ to, subject, text, html, link: resetLink, kind: "password reset" });
 }
