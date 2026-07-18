@@ -17,3 +17,6 @@ export const paymentMethodEnum = pgEnum("payment_method", ["bkash", "cod"]);
 // cross-checking the transaction. COD orders stay "pending".
 export const paymentStatusEnum = pgEnum("payment_status", ["pending", "verified"]);
 export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", "rejected"]);
+// The four fixed FAQ segments shown on the storefront Help Centre. Admins add
+// questions under each; the segment titles live in the apps (SEGMENTS const).
+export const faqSegmentEnum = pgEnum("faq_segment", ["products", "orders", "delivery", "returns"]);

@@ -4,11 +4,9 @@ import BackToTop from "./BackToTop";
 import SocialIcons from "@/components/ui/SocialIcons";
 
 const QUICK_LINKS = [
-  { label: "About Us", href: "/about" },
+  { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },
-  { label: "Track Order", href: "/track-order" },
-  { label: "Return Policy", href: "/returns" },
-  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Return & Refund", href: "/returns" },
 ];
 
 export default function Footer() {
@@ -55,7 +53,7 @@ export default function Footer() {
             <p className="text-sm font-semibold uppercase tracking-wider mb-3">Stay Connected</p>
             <SocialIcons />
             <p className="mt-4 text-sm text-muted">
-              Hotline: <a href="tel:+8801700000000" className="hover:text-primary">+880 1700-000000</a>
+              Hotline: <a href="tel:+8801778931591" className="hover:text-primary">01778-931591</a>
             </p>
           </div>
         </div>

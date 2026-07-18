@@ -76,7 +76,7 @@ export default function RegisterPage() {
     setError(null);
     if (fullName.trim().length < 2) return setError("Please enter your full name.");
     if (!BD_PHONE.test(phone)) return setError("Enter a valid Bangladeshi mobile number (01XXXXXXXXX).");
-    if (!EMAIL.test(email.trim())) return setError("Enter a valid email address.");
+    if (!EMAIL.test(email.trim())) return setError("Enter a valid Gmail address.");
     if (!divisionId || !districtId || !upazilaId)
       return setError("Please select your division, district and upazila / thana.");
     if (area.trim().length < 3) return setError("Please enter your area.");
@@ -161,12 +161,12 @@ export default function RegisterPage() {
           />
         </div>
         <div>
-          <label className="block text-base font-medium mb-1.5">Email</label>
+          <label className="block text-base font-medium mb-1.5">Gmail</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@email.com"
+            placeholder="you@gmail.com"
             className={inputClass}
           />
         </div>

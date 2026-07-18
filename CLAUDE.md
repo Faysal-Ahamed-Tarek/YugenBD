@@ -64,7 +64,7 @@ Both frontend and admin use JWT **access token in memory + httpOnly refresh cook
 - Bangladeshi phone everywhere: `/^\+8801[3-9]\d{8}$/`. Currency BDT shown as `৳799` (no decimals) via `formatPrice`.
 - Delivery zones enum: `inside_dhaka` / `outside_dhaka` (drives `deliveryFee`).
 - Orders snapshot title/price/imageUrl into `order_items` (product FK is `set null`) so history survives product deletion. Guest orders allowed. `isPreOrder` flags lines ordered against 0 stock.
-- **Categories are one level deep**: self-referencing `parentId` (NULL = top-level), nesting capped at one level in the service, `ON DELETE RESTRICT`. Categories have no image field (removed). `concerns` ("Shop by Concern") and `hero-slides` are separate CMS-like resources managed from admin.
+- **Categories are one level deep**: self-referencing `parentId` (NULL = top-level), nesting capped at one level in the service, `ON DELETE RESTRICT`. Categories have no image field (removed). `concerns` ("Shop by Concern"), `hero-slides`, and `faq` (Help Centre, four fixed segments: products/orders/delivery/returns) are separate CMS-like resources managed from admin.
 - Reviews are guest-submittable and moderated (`review_status`: pending/approved/rejected); public list shows approved only.
 
 ## Frontend conventions
@@ -75,6 +75,7 @@ Both frontend and admin use JWT **access token in memory + httpOnly refresh cook
 - Every image is `next/image` with a placeholder fallback. Carousels use native scroll-snap or transform math, not heavy libraries.
 - Any `fixed`/`position` overlay rendered under the header must be **portaled to `document.body`** — the header's `backdrop-blur` creates a containing block that traps fixed descendants.
 - Link to products by **slug, never id**.
+- Static content pages (`contact`, `faq`, `returns`) are hand-authored Server Components — no CMS/backend behind them. There is **no contact-message API**: `components/content/ContactForm.tsx` composes the enquiry into a prefilled `wa.me` WhatsApp link and opens it. WhatsApp is the storefront's support channel (same channel used for orders); keep new "contact us" flows pointed there rather than adding a messages endpoint.
 
 ## Deployment
 

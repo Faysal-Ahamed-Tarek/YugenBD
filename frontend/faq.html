@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frequently Asked Questions — Yugen</title>
+<style>
+  :root{
+    --cream:#FDF8F4;
+    --cream-2:#F6EDE4;
+    --ink:#1A1A18;
+    --ink-soft:#4a463f;
+    --gold:#B08A4F;
+    --gold-soft:#c9a874;
+    --line:#e7dcd0;
+    --serif:"Cormorant Garamond","Times New Roman",Georgia,serif;
+    --sans:"Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    text-align:center;
+    padding:56px 24px 40px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,var(--cream) 0%,var(--cream-2) 100%);
+  }
+  .kanji{
+    font-family:var(--serif);
+    font-size:clamp(40px,7vw,64px);
+    letter-spacing:.18em;
+    color:var(--ink);
+    line-height:1;
+  }
+  .leaf{color:var(--gold);font-size:.5em;vertical-align:super;margin-left:.15em}
+  .brand{
+    font-family:var(--serif);
+    font-size:clamp(38px,8vw,58px);
+    font-weight:500;
+    letter-spacing:.02em;
+    margin-top:6px;
+  }
+  .tagline{
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    color:var(--gold);
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:clamp(16px,3vw,20px);
+    margin-top:10px;
+  }
+  .tagline::before,.tagline::after{
+    content:"";width:38px;height:1px;background:var(--gold-soft);
+  }
+  .eyebrow{
+    margin-top:34px;
+    font-size:12px;
+    letter-spacing:.34em;
+    text-transform:uppercase;
+    color:var(--gold);
+  }
+  h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(30px,6vw,46px);
+    letter-spacing:.01em;
+    margin-top:6px;
+  }
+  .sub{
+    margin-top:12px;
+    font-size:15px;
+    color:var(--ink-soft);
+    max-width:520px;
+    margin-left:auto;margin-right:auto;
+  }
+
+  /* ---------- Layout ---------- */
+  main{
+    max-width:820px;
+    margin:0 auto;
+    padding:48px 24px 40px;
+  }
+
+  /* ---------- Category nav ---------- */
+  .catnav{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+    margin-bottom:44px;
+  }
+  .catnav a{
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-soft);text-decoration:none;
+    border:1px solid var(--line);border-radius:999px;
+    padding:8px 16px;background:#fff;transition:.2s;
+  }
+  .catnav a:hover{border-color:var(--gold);color:var(--gold);background:var(--cream-2)}
+
+  .cat-title{
+    font-family:var(--serif);
+    font-size:clamp(22px,4vw,28px);
+    font-weight:600;
+    color:var(--ink);
+    margin:40px 0 16px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--gold-soft);
+    display:flex;align-items:baseline;gap:12px;
+  }
+  .cat-title:first-of-type{margin-top:0}
+  .cat-title .num{font-size:.6em;color:var(--gold);font-style:italic;letter-spacing:.05em}
+
+  /* ---------- Accordion ---------- */
+  details{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-bottom:12px;
+    overflow:hidden;
+    transition:border-color .2s;
+  }
+  details[open]{border-color:var(--gold-soft)}
+  summary{
+    list-style:none;
+    cursor:pointer;
+    padding:18px 22px;
+    font-family:var(--serif);
+    font-size:19px;
+    font-weight:600;
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    transition:color .2s;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary:hover{color:var(--gold)}
+  summary .chev{
+    flex:none;
+    width:26px;height:26px;border-radius:50%;
+    border:1px solid var(--gold-soft);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--gold);font-size:15px;line-height:1;
+    transition:transform .25s,background .2s;
+  }
+  details[open] summary .chev{transform:rotate(45deg);background:var(--cream-2)}
+  .answer{
+    padding:0 22px 20px;
+    color:var(--ink-soft);
+    font-size:15.5px;
+    line-height:1.75;
+  }
+  .answer p{margin-bottom:12px}
+  .answer p:last-child{margin-bottom:0}
+  .answer strong{color:var(--ink)}
+  .answer a{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold-soft)}
+  .answer ul{margin:6px 0 12px;list-style:none}
+  .answer li{position:relative;padding-left:22px;margin-bottom:7px}
+  .answer li::before{
+    content:"";position:absolute;left:2px;top:9px;
+    width:6px;height:6px;background:var(--gold);transform:rotate(45deg);
+  }
+
+  /* ---------- Contact CTA ---------- */
+  .contact{
+    text-align:center;
+    background:var(--ink);
+    color:var(--cream);
+    border-radius:14px;
+    padding:44px 28px;
+    margin-top:56px;
+  }
+  .contact .k{font-family:var(--serif);color:var(--gold-soft);font-size:20px;letter-spacing:.2em}
+  .contact h2{
+    font-family:var(--serif);color:var(--cream);
+    font-size:clamp(24px,4vw,32px);font-weight:600;margin:8px 0 8px;
+  }
+  .contact p{color:#cbc3b8;max-width:460px;margin:0 auto 22px}
+  .contact-grid{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:14px 34px;font-size:15px;
+  }
+  .contact-grid a,.contact-grid span{color:var(--gold-soft);text-decoration:none}
+  .contact-grid .lbl{
+    display:block;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:#8f877b;margin-bottom:3px;
+  }
+
+  footer{
+    text-align:center;
+    padding:34px 24px 48px;
+    color:var(--ink-soft);
+    font-size:13px;letter-spacing:.03em;
+  }
+  footer .fmark{font-family:var(--serif);color:var(--gold);font-size:16px;letter-spacing:.2em}
+
+  @media (max-width:640px){
+    main{padding:36px 20px}
+    summary{font-size:17px;padding:16px 18px}
+    .answer{padding:0 18px 18px}
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="kanji">幽玄<span class="leaf">❧</span></div>
+    <div class="brand">yugen</div>
+    <div class="tagline">Nourish. Renew. Glow.</div>
+    <div class="eyebrow">Help Centre</div>
+    <h1>Frequently Asked Questions</h1>
+    <p class="sub">Everything you need to know about ordering, authenticity, delivery, and care — your reliable partner for authentic Japanese beauty.</p>
+  </header>
+
+  <main>
+
+    <nav class="catnav">
+      <a href="#products">Products &amp; Authenticity</a>
+      <a href="#orders">Orders &amp; Payment</a>
+      <a href="#delivery">Delivery</a>
+      <a href="#returns">Returns &amp; Care</a>
+    </nav>
+
+    <!-- ============ PRODUCTS ============ -->
+    <h2 class="cat-title" id="products"><span class="num">01</span> Products &amp; Authenticity</h2>
+
+    <details open>
+      <summary>Are your products 100% authentic? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Yes. Every Yugen product is <strong>genuine and imported directly from Japan</strong>. We source from authorised channels and never sell counterfeit, refilled, or expired stock. What arrives at your door is exactly what you would find on a shelf in Japan.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>How do I know a product will suit my skin? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Each product page lists its key ingredients, skin type, and how to use it. If you are unsure, message our Customer Care team with your skin concerns and we will happily recommend the right match from our range.</p>
+        <p>We always recommend a small patch test before first full use, especially for actives and new formulas.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Are the products suitable for sensitive skin? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Many Japanese formulas are known for being gentle and fragrance-conscious, but sensitivity varies from person to person. Check the ingredient list on the product page and patch test first. If you have a known allergy, reach out before ordering and we will guide you.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Do the products have long expiry dates? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Yes. We only stock items with a healthy shelf life. Because inventory is imported directly, batches move quickly and you receive fresh stock. Any product nearing its date is clearly marked or removed from sale.</p>
+      </div>
+    </details>
+
+    <!-- ============ ORDERS ============ -->
+    <h2 class="cat-title" id="orders"><span class="num">02</span> Orders &amp; Payment</h2>
+
+    <details>
+      <summary>How do I place an order? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Browse <a href="https://yugenbd.com">yugenbd.com</a>, add your favourites to the cart, and check out with your delivery details. You can also order directly through our Instagram and Facebook pages — just send us a message.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>What payment methods do you accept? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>We accept:</p>
+        <ul>
+          <li>Mobile banking — bKash, Nagad, Rocket</li>
+          <li>Bank transfer</li>
+          <li>Cash on Delivery (where available)</li>
+        </ul>
+        <p>For some orders, a partial advance may be required to confirm the booking. Our team will confirm this at checkout.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Can I change or cancel my order after placing it? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Yes, as long as the order has not yet been packed or handed to the courier. Contact our Customer Care team as soon as possible with your order number and we will do our best to update or cancel it.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Do you restock sold-out items? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Most bestsellers are restocked regularly. If something you want is out of stock, message us and we will let you know the expected restock date or notify you when it returns.</p>
+      </div>
+    </details>
+
+    <!-- ============ DELIVERY ============ -->
+    <h2 class="cat-title" id="delivery"><span class="num">03</span> Delivery</h2>
+
+    <details>
+      <summary>Do you deliver all over Bangladesh? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Yes. We deliver nationwide.</p>
+        <ul>
+          <li><strong>Inside Dhaka:</strong> typically 1–3 working days</li>
+          <li><strong>Outside Dhaka:</strong> typically 3–5 working days via trusted courier</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>What are the delivery charges? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Delivery charges depend on your location and are shown at checkout. Inside-Dhaka delivery is charged at a flat city rate, while outside-Dhaka orders follow standard courier rates. We occasionally run free-delivery promotions on orders above a certain value.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>How is my order packaged? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Every order is packed with care in a protective Yugen box to keep your products safe in transit. Glass and liquid items receive extra cushioning. Please keep the original packaging in case a return is ever needed.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Can I track my order? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Yes. Once your parcel is dispatched, we share a tracking or consignment number through your preferred contact method so you can follow it to your door.</p>
+      </div>
+    </details>
+
+    <!-- ============ RETURNS ============ -->
+    <h2 class="cat-title" id="returns"><span class="num">04</span> Returns &amp; Care</h2>
+
+    <details>
+      <summary>What is your return &amp; refund policy? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>If an item arrives <strong>damaged, defective, or incorrect</strong>, we will replace it or issue a full refund within 7–10 working days of an approved claim. Report the issue within <strong>3 days</strong> of receipt with photo or video evidence.</p>
+        <p>See our full <a href="return-refund.html">Return &amp; Refund Policy</a> for details.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Can I return a product if I change my mind? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Unfortunately no. For hygiene and safety reasons, we cannot accept used, opened, or swatched products, or returns based on a change of mind about smell, texture, colour, or design. Only damaged, defective, or incorrect items qualify for return.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>What should I do if my order arrives damaged? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Record a clear unboxing photo or video, then contact our Customer Care team within 3 days with your order number and the evidence. Once verified, we arrange a replacement or refund — with no extra shipping fee for damaged or defective items.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>How should I store my products? <span class="chev">+</span></summary>
+      <div class="answer">
+        <p>Keep products in a cool, dry place away from direct sunlight and heat. Close caps and lids tightly after use, and follow any specific storage note on the packaging. Proper storage keeps your Japanese skincare fresh and effective for longer.</p>
+      </div>
+    </details>
+
+    <!-- ============ CONTACT ============ -->
+    <div class="contact">
+      <div class="k">幽玄</div>
+      <h2>Didn't find your answer?</h2>
+      <p>Our Customer Care team is always happy to help. Reach out and we'll get back to you.</p>
+      <div class="contact-grid">
+        <div>
+          <span class="lbl">Hotline</span>
+          <a href="tel:+8801XXXXXXXXX">+880 1XXX-XXXXXX</a>
+        </div>
+        <div>
+          <span class="lbl">Email</span>
+          <a href="mailto:hello@yugen.bd">hello@yugen.bd</a>
+        </div>
+        <div>
+          <span class="lbl">Website</span>
+          <a href="https://yugenbd.com">yugenbd.com</a>
+        </div>
+        <div>
+          <span class="lbl">Social</span>
+          <span>@yugen.bd</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="fmark">幽玄 · yugen</div>
+    <p>Thank you for choosing Yugen — Nourish. Renew. Glow.</p>
+    <p>&copy; Yugen · Authentic Japanese Cosmetics · Dhaka, Bangladesh</p>
+  </footer>
+
+</body>
+</html>

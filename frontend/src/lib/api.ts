@@ -10,8 +10,9 @@ import type {
   ProductListParams,
   ProductsPage,
   Review,
-  TestimonialVideo,
   HeroSlide,
+  FaqItem,
+  Announcement,
 } from "@/types";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000/api/v1";
@@ -55,6 +56,14 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
   return (await apiGet<HeroSlide[]>("/hero-slides")) ?? [];
 }
 
+export async function getFaqs(): Promise<FaqItem[]> {
+  return (await apiGet<FaqItem[]>("/faq")) ?? [];
+}
+
+export async function getAnnouncements(): Promise<Announcement[]> {
+  return (await apiGet<Announcement[]>("/announcements")) ?? [];
+}
+
 export async function getProducts(params: ProductListParams = {}): Promise<Product[]> {
   return (await apiGet<Product[]>(`/products${productQueryString(params)}`)) ?? [];
 }
@@ -94,10 +103,6 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
 
 export async function getConcernBySlug(slug: string): Promise<ConcernDetail | null> {
   return apiGet<ConcernDetail>(`/concerns/${encodeURIComponent(slug)}`);
-}
-
-export async function getTestimonials(): Promise<TestimonialVideo[]> {
-  return (await apiGet<TestimonialVideo[]>("/testimonials")) ?? [];
 }
 
 export async function getConcerns(): Promise<Concern[]> {

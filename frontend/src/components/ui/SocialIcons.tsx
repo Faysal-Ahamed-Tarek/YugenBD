@@ -1,29 +1,19 @@
 const SOCIALS = [
   {
     label: "Facebook",
-    href: "https://facebook.com",
+    href: "https://www.facebook.com/yugenbangladesh",
     icon: (
       <path d="M14 8h2.5V4.5h-3C10.5 4.5 9.5 6.6 9.5 8.5V11H7v3.5h2.5v6h4v-6H16l.5-3.5h-3V9c0-.6.2-1 .5-1z" />
     ),
   },
   {
     label: "Instagram",
-    href: "https://instagram.com",
+    href: "https://www.instagram.com/bdyugen/",
     icon: (
       <>
         <rect x="4" y="4" width="16" height="16" rx="4.5" />
         <circle cx="12" cy="12" r="3.5" />
         <circle cx="17" cy="7" r="1" fill="currentColor" stroke="none" />
-      </>
-    ),
-  },
-  {
-    label: "YouTube",
-    href: "https://youtube.com",
-    icon: (
-      <>
-        <rect x="3" y="6" width="18" height="12" rx="3" />
-        <path d="M10.5 9.5l4.5 2.5-4.5 2.5z" fill="currentColor" stroke="none" />
       </>
     ),
   },

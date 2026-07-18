@@ -31,7 +31,7 @@ export default function LoginPage() {
     setResent(false);
     const id = identifier.trim();
     if (!BD_PHONE.test(id) && !EMAIL.test(id)) {
-      return setError("Enter your mobile number (01XXXXXXXXX) or email.");
+      return setError("Enter your mobile number (01XXXXXXXXX) or Gmail.");
     }
     if (!password) return setError("Password is required.");
     setSubmitting(true);
@@ -60,16 +60,16 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-10 md:py-16">
       <h1 className="text-2xl font-semibold">Log in</h1>
-      <p className="mt-1 text-base text-muted">Welcome back — sign in with your mobile number or email.</p>
+      <p className="mt-1 text-base text-muted">Welcome back — sign in with your mobile number or Gmail.</p>
 
       <form onSubmit={submit} className="mt-6 space-y-4">
         <div>
-          <label className="block text-base font-medium mb-1.5">Mobile number or email</label>
+          <label className="block text-base font-medium mb-1.5">Mobile number or Gmail</label>
           <input
             type="text"
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="01XXXXXXXXX or you@email.com"
+            placeholder="01XXXXXXXXX or you@gmail.com"
             className="w-full h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
           />
         </div>

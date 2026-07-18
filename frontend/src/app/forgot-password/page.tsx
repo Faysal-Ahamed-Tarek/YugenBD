@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!EMAIL.test(email.trim())) return setError("Enter a valid email address.");
+    if (!EMAIL.test(email.trim())) return setError("Enter a valid Gmail address.");
     setSubmitting(true);
     try {
       await authApi.post("/auth/forgot-password", { email: email.trim() });
@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
     <div className="mx-auto max-w-md px-4 py-10 md:py-16">
       <h1 className="text-2xl font-semibold">Forgot password</h1>
       <p className="mt-1 text-base text-muted">
-        Enter the email on your account and we&apos;ll send you a link to reset your password.
+        Enter the Gmail on your account and we&apos;ll send you a link to reset your password.
       </p>
 
       {sent ? (
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
             <label htmlFor="email" className="block text-base font-medium mb-1.5">
-              Email
+              Gmail
             </label>
             <input
               id="email"
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@email.com"
+              placeholder="you@gmail.com"
               className="w-full h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
             />
           </div>

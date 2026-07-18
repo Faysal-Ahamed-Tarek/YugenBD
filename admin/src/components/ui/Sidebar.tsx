@@ -25,7 +25,14 @@ const NAV: NavItem[] = [
   { label: "Concerns", href: "/concerns", icon: "M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" },
   { label: "Orders", href: "/orders", icon: "M6 7h12l1 13H5L6 7zM9 7V5a3 3 0 0 1 6 0v2" },
   { label: "Reviews", href: "/reviews", icon: "M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5L12 3z" },
-  { label: "Pages", icon: "M6 3h9l5 5v13H6zM15 3v5h5M9 13h6M9 17h6", children: [{ label: "Home", href: "/pages/home" }] },
+  {
+    label: "Pages",
+    icon: "M6 3h9l5 5v13H6zM15 3v5h5M9 13h6M9 17h6",
+    children: [
+      { label: "Home", href: "/pages/home" },
+      { label: "FAQ", href: "/pages/faq" },
+    ],
+  },
   { label: "Settings", href: "/settings", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4L2.6 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1L9.5 21h5l.4-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z" },
 ];
 

@@ -8,7 +8,6 @@ import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 import categoryRoutes from "./modules/categories/category.routes";
 import productRoutes from "./modules/products/product.routes";
 import uploadRoutes from "./modules/uploads/upload.routes";
-import testimonialRoutes from "./modules/testimonials/testimonial.routes";
 import concernRoutes from "./modules/concerns/concern.routes";
 import reviewRoutes from "./modules/reviews/review.routes";
 import adminReviewRoutes from "./modules/reviews/review.admin.routes";
@@ -16,6 +15,8 @@ import orderRoutes from "./modules/orders/order.routes";
 import authRoutes from "./modules/auth/auth.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import heroSlideRoutes from "./modules/hero-slides/hero-slide.routes";
+import faqRoutes from "./modules/faq/faq.routes";
+import announcementRoutes from "./modules/announcements/announcement.routes";
 import locationRoutes from "./modules/locations/location.routes";
 import addressRoutes from "./modules/addresses/address.routes";
 
@@ -45,8 +46,9 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/uploads", uploadRoutes);
-app.use("/api/v1/testimonials", testimonialRoutes);
 app.use("/api/v1/hero-slides", heroSlideRoutes);
+app.use("/api/v1/faq", faqRoutes);
+app.use("/api/v1/announcements", announcementRoutes);
 app.use("/api/v1/locations", locationRoutes);
 app.use("/api/v1/addresses", addressRoutes);
 app.use("/api/v1/concerns", concernRoutes);

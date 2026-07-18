@@ -126,3 +126,39 @@ html {
 .rich-text-inline p:last-child {
   margin-bottom: 0;
 }
+
+/* Content pages (FAQ answers): paragraph spacing, disc lists, primary links. */
+.rich-faq p {
+  margin-bottom: 0.75rem;
+}
+.rich-faq p:last-child {
+  margin-bottom: 0;
+}
+.rich-faq strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.rich-faq a {
+  color: var(--primary);
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+}
+.rich-faq ul {
+  margin: 0.25rem 0 0.75rem;
+}
+/* Diamond bullet lists used across the content pages (FAQ + Returns). */
+.rich-faq li,
+.rich-list li {
+  position: relative;
+  padding-left: 1.35rem;
+}
+.rich-faq li::before,
+.rich-list li::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.6em;
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  transform: rotate(45deg);
+}

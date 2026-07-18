@@ -104,7 +104,6 @@ export default async function ProductsPage({ searchParams }: PageProps) {
             Desktop: the count (the filter button is lg:hidden). */}
         <div className="mt-2 flex items-center gap-3">
           <MobileFilters
-            key={filterKey}
             categories={categories}
             concerns={concerns}
             current={filters}

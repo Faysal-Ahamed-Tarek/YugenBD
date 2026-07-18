@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { HeroSlide, TestimonialVideo } from "@/lib/types";
+import type { HeroSlide, Announcement } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import SingleImageUpload from "@/components/ui/SingleImageUpload";
@@ -13,10 +13,10 @@ export default function HomePageAdmin() {
     <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-semibold">Home Page</h1>
-        <p className="mt-1 text-sm text-muted">Manage the storefront hero slider and video testimonials.</p>
+        <p className="mt-1 text-sm text-muted">Manage the storefront hero slider and announcement bar.</p>
       </div>
       <HeroSlidesSection />
-      <TestimonialsSection />
+      <AnnouncementsSection />
     </div>
   );
 }
@@ -153,31 +153,19 @@ function HeroSlidesSection() {
   );
 }
 
-/* ─────────────────────────── Testimonials ──────────────────────────── */
+/* ─────────────────────────── Announcement bar ──────────────────────────── */
 
-// Derive the storefront video + poster URLs from a raw Cloudinary video URL,
-// applying the same vertical-crop transform + poster frame the seeder uses.
-function deriveTestimonialUrls(secureUrl: string): { videoUrl: string; posterUrl: string } {
-  const marker = "/upload/";
-  const idx = secureUrl.indexOf(marker);
-  if (idx === -1) return { videoUrl: secureUrl, posterUrl: secureUrl };
-  const head = secureUrl.slice(0, idx + marker.length);
-  const tail = secureUrl.slice(idx + marker.length);
-  const videoUrl = `${head}c_fill,ar_9:16,w_540,q_auto/${tail}`;
-  const posterUrl = `${head}so_2,f_jpg/${tail.replace(/\.[a-zA-Z0-9]+$/, ".jpg")}`;
-  return { videoUrl, posterUrl };
-}
-
-function TestimonialsSection() {
-  const [items, setItems] = useState<TestimonialVideo[]>([]);
+function AnnouncementsSection() {
+  const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Announcement | null>(null);
   const [creating, setCreating] = useState(false);
-  const [toDelete, setToDelete] = useState<TestimonialVideo | null>(null);
+  const [toDelete, setToDelete] = useState<Announcement | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get<TestimonialVideo[]>("/testimonials/all");
+      const res = await api.get<Announcement[]>("/announcements/all");
       setItems(res.data);
     } finally {
       setLoading(false);
@@ -188,8 +176,18 @@ function TestimonialsSection() {
     load();
   }, [load]);
 
-  const toggleActive = async (t: TestimonialVideo) => {
-    await api.patch(`/testimonials/${t.id}`, { isActive: !t.isActive });
+  const toggleActive = async (a: Announcement) => {
+    await api.patch(`/announcements/${a.id}`, { isActive: !a.isActive });
+    load();
+  };
+
+  const move = async (index: number, dir: -1 | 1) => {
+    const next = index + dir;
+    if (next < 0 || next >= items.length) return;
+    const reordered = [...items];
+    [reordered[index], reordered[next]] = [reordered[next], reordered[index]];
+    setItems(reordered); // optimistic
+    await api.patch("/announcements/reorder", { ids: reordered.map((a) => a.id) });
     load();
   };
 
@@ -197,15 +195,17 @@ function TestimonialsSection() {
     <section className="rounded-2xl border border-border bg-background p-5">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Video Testimonials</h2>
-          <p className="text-sm text-muted">Vertical customer videos shown on the home page.</p>
+          <h2 className="text-lg font-semibold">Announcement Bar</h2>
+          <p className="text-sm text-muted">
+            Scrolling messages shown just under the hero (offers, promos). Only active messages appear.
+          </p>
         </div>
         <button
           type="button"
           onClick={() => setCreating(true)}
           className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
         >
-          + Add Video
+          + Add Message
         </button>
       </div>
 
@@ -213,34 +213,54 @@ function TestimonialsSection() {
         <p className="text-sm text-muted">Loading…</p>
       ) : items.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted">
-          No testimonial videos yet.
+          No announcements yet. Add one to show the bar.
         </p>
       ) : (
         <ul className="space-y-2">
-          {items.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 rounded-xl border border-border p-2">
-              <span className="relative h-16 w-10 shrink-0 overflow-hidden rounded-lg bg-surface">
-                <Image src={t.posterUrl} alt="" fill sizes="40px" className="object-cover" />
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{t.title}</p>
-                {t.description && <p className="truncate text-xs text-muted">{t.description}</p>}
-              </div>
-              <div className="ml-auto flex items-center gap-1.5">
+          {items.map((a, i) => (
+            <li key={a.id} className="flex items-center gap-3 rounded-xl border border-border p-3">
+              <span className="text-xs text-muted">#{i + 1}</span>
+              <p className="min-w-0 flex-1 truncate text-sm">{a.text}</p>
+              <div className="flex flex-none items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => toggleActive(t)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    t.isActive ? "bg-green-100 text-green-700" : "bg-surface text-muted"
-                  }`}
+                  onClick={() => move(i, -1)}
+                  disabled={i === 0}
+                  aria-label="Move up"
+                  className="rounded-lg border border-border px-2 py-1 text-sm text-muted hover:text-primary disabled:opacity-40"
                 >
-                  {t.isActive ? "Active" : "Hidden"}
+                  ↑
                 </button>
                 <button
                   type="button"
-                  onClick={() => setToDelete(t)}
+                  onClick={() => move(i, 1)}
+                  disabled={i === items.length - 1}
+                  aria-label="Move down"
+                  className="rounded-lg border border-border px-2 py-1 text-sm text-muted hover:text-primary disabled:opacity-40"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleActive(a)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    a.isActive ? "bg-green-100 text-green-700" : "bg-surface text-muted"
+                  }`}
+                >
+                  {a.isActive ? "Active" : "Hidden"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(a)}
+                  className="rounded-lg border border-border px-2.5 py-1 text-xs text-muted hover:text-primary"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setToDelete(a)}
                   className="rounded-lg border border-border px-2 py-1 text-sm text-muted hover:text-red-600"
-                  aria-label="Delete testimonial"
+                  aria-label="Delete announcement"
                 >
                   ×
                 </button>
@@ -250,10 +270,15 @@ function TestimonialsSection() {
         </ul>
       )}
 
-      {creating && (
-        <TestimonialModal
-          onClose={() => setCreating(false)}
+      {(creating || editing) && (
+        <AnnouncementModal
+          item={editing}
+          onClose={() => {
+            setEditing(null);
+            setCreating(false);
+          }}
           onSaved={() => {
+            setEditing(null);
             setCreating(false);
             load();
           }}
@@ -262,12 +287,12 @@ function TestimonialsSection() {
 
       <ConfirmDialog
         open={Boolean(toDelete)}
-        title="Delete testimonial"
-        message={`Delete "${toDelete?.title}"?`}
+        title="Delete announcement"
+        message={`Delete "${toDelete?.text}"?`}
         onClose={() => setToDelete(null)}
         onConfirm={async () => {
           if (toDelete) {
-            await api.del(`/testimonials/${toDelete.id}`);
+            await api.del(`/announcements/${toDelete.id}`);
             load();
           }
         }}
@@ -276,47 +301,29 @@ function TestimonialsSection() {
   );
 }
 
-function TestimonialModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [rawVideoUrl, setRawVideoUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [isActive, setIsActive] = useState(true);
+function AnnouncementModal({
+  item,
+  onClose,
+  onSaved,
+}: {
+  item: Announcement | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [text, setText] = useState(item?.text ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const derived = rawVideoUrl ? deriveTestimonialUrls(rawVideoUrl) : null;
-
-  const handleVideo = async (file: File | null) => {
-    if (!file) return;
-    setUploading(true);
-    setError(null);
-    try {
-      const form = new FormData();
-      form.append("video", file);
-      // The video endpoint returns a single object ({ url, publicId }).
-      const res = await api.upload<{ url: string; publicId: string }>("/uploads/video", form);
-      setRawVideoUrl(res.data.url);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Video upload failed.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const save = async () => {
     setError(null);
-    if (title.trim().length < 1) return setError("Title is required.");
-    if (!derived) return setError("Please upload a video.");
+    if (text.trim().length < 2) return setError("Message is too short.");
     setSaving(true);
     try {
-      await api.post("/testimonials", {
-        title: title.trim(),
-        description: description.trim() || undefined,
-        videoUrl: derived.videoUrl,
-        posterUrl: derived.posterUrl,
-        isActive,
-      });
+      if (item) {
+        await api.patch(`/announcements/${item.id}`, { text: text.trim() });
+      } else {
+        await api.post("/announcements", { text: text.trim() });
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not save.");
@@ -326,61 +333,30 @@ function TestimonialModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   };
 
   return (
-    <Modal open title="Add Video Testimonial" onClose={onClose}>
+    <Modal open title={item ? "Edit Message" : "Add Message"} onClose={onClose}>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Title</label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full h-10 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Description</label>
+          <label className="block text-sm font-medium mb-1.5">Message</label>
           <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={2}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={3}
+            placeholder="e.g. ৩,০০০ টাকার বেশি কেনাকাটায় ফ্রি ডেলিভারি!"
             className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
           />
+          <p className="mt-1 text-xs text-muted">Shown in the scrolling bar under the hero. Emoji allowed.</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Video</label>
-          {derived ? (
-            <div className="flex items-center gap-3">
-              <span className="relative h-20 w-12 overflow-hidden rounded-lg border border-border bg-surface">
-                <Image src={derived.posterUrl} alt="" fill sizes="48px" className="object-cover" />
-              </span>
-              <button type="button" onClick={() => setRawVideoUrl(null)} className="text-sm text-muted hover:text-primary">
-                Replace
-              </button>
-            </div>
-          ) : (
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border bg-surface px-3 py-2.5 text-sm text-muted hover:border-primary hover:text-primary transition-colors">
-              {uploading ? "Uploading…" : "Upload video (MP4/MOV/WEBM)"}
-              <input
-                type="file"
-                accept="video/mp4,video/quicktime,video/webm"
-                className="hidden"
-                onChange={(e) => handleVideo(e.target.files?.[0] ?? null)}
-              />
-            </label>
-          )}
-          <p className="mt-1 text-xs text-muted">Cropped to a vertical 9:16 frame automatically; poster generated from the video.</p>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 accent-primary" />
-          Active (show on the home page)
-        </label>
         {error && <p className="rounded-lg bg-primary-light px-3 py-2 text-sm text-primary">{error}</p>}
         <div className="flex justify-end gap-3">
-          <button onClick={onClose} className="rounded-full border border-border px-5 py-2 text-sm font-medium hover:bg-surface">
+          <button
+            onClick={onClose}
+            className="rounded-full border border-border px-5 py-2 text-sm font-medium hover:bg-surface"
+          >
             Cancel
           </button>
           <button
             onClick={save}
-            disabled={saving || uploading}
+            disabled={saving}
             className="rounded-full bg-primary px-6 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
           >
             {saving ? "Saving…" : "Save"}

@@ -232,7 +232,19 @@
       "Bash(curl -s -o b1.png \"https://res.cloudinary.com/c2q2aeng/image/upload/v1784220003/yugenbd/hero/tnkdckrfakoewawnyarw.png\")",
       "Bash(curl -s -o b2.png \"https://res.cloudinary.com/c2q2aeng/image/upload/v1784220296/yugenbd/hero/k0kmjwfquzkg2poc9oef.png\")",
       "Bash(node -e \"require\\('dotenv'\\).config\\(\\); console.log\\('FRONTEND_URL =', process.env.FRONTEND_URL\\); console.log\\('sample link =', process.env.FRONTEND_URL + '/verify-email?token=…'\\)\")",
-      "Bash(SMTP_USER=bdyugen@gmail.com SMTP_PASS=jhxczopxnmgffnrb node -e ' *)"
+      "Bash(SMTP_USER=bdyugen@gmail.com SMTP_PASS=jhxczopxnmgffnrb node -e ' *)",
+      "Bash(find /home/faysal/Desktop/YugenBD -maxdepth 3 -name \"*.html\" -not -path \"*/node_modules/*\" -not -path \"*/.next/*\" 2>/dev/null; echo \"---also checking common spots---\"; ls ~/Desktop/*.html ~/Downloads/*.html 2>/dev/null)",
+      "Bash(npx eslint *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(e['idx'], e['tag']\\) for e in d['entries']]\")",
+      "Bash(node -e \"require\\('dotenv'\\).config\\(\\); const u=process.env.DATABASE_URL||''; const m=u.match\\(/@\\([^/]+\\)\\\\//\\); console.log\\('DB host:', m?m[1]:'\\(not set\\)'\\); console.log\\('DB name:', \\(u.match\\(/\\\\/\\([^/?]+\\)\\(\\\\?|$\\)/\\)||[]\\)[1]||'?'\\);\")",
+      "Bash(curl -s http://localhost:4000/api/v1/faq)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4000/api/v1/testimonials)",
+      "Bash(curl -s -o /dev/null -w \"admin 3001: %{http_code}\\\\n\" http://localhost:3001/)",
+      "Bash(curl -s -o /dev/null -w \"admin faq route: %{http_code}\\\\n\" http://localhost:3001/pages/faq)",
+      "Bash(curl -s http://localhost:4000/api/v1/announcements)",
+      "Bash(curl -s http://localhost:4000/api/v1/locations/divisions)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\([x['name'] for x in d.get\\('data',[]\\)]\\)\")",
+      "Bash(curl -s \"http://localhost:4000/api/v1/products?limit=3\")"
     ]
   }
 }

@@ -13,6 +13,12 @@ const DELIVERY = {
   outside_dhaka: { fee: 120, estimate: "2-3 days" },
 } as const;
 
+/**
+ * Orders whose subtotal reaches this amount (BDT) ship free, regardless of
+ * delivery zone. Authoritative on the server — the storefront only mirrors it.
+ */
+export const FREE_DELIVERY_THRESHOLD = 3000;
+
 function money(value: number) {
   return value.toFixed(2);
 }
@@ -81,7 +87,9 @@ async function buildAndInsertOrder(
   });
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
-  const { fee, estimate } = DELIVERY[input.deliveryZone];
+  const { fee: zoneFee, estimate } = DELIVERY[input.deliveryZone];
+  // Free delivery once the subtotal reaches the threshold.
+  const fee = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : zoneFee;
   const total = subtotal + fee;
 
   const isBkash = input.paymentMethod === "bkash";

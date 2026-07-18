@@ -3,7 +3,6 @@ import { getProducts, getConcerns, getHeroSlides } from "@/lib/api";
 import type { Product } from "@/types";
 import HeroSlider from "@/components/home/HeroSlider";
 import ShopByConcern from "@/components/home/ShopByConcern";
-import TestimonialsSection from "@/components/home/TestimonialsSection";
 import ProductCarousel from "@/components/product/ProductCarousel";
 
 export const metadata: Metadata = {
@@ -40,7 +39,7 @@ function buildJsonLd(newArrivals: Product[]) {
     logo: `${SITE_URL}/manual-images/logo.svg`,
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+8801700000000",
+      telephone: "+8801778931591",
       contactType: "customer service",
       areaServed: "BD",
     },
@@ -103,8 +102,6 @@ export default async function HomePage() {
       <HeroSlider slides={heroSlides} />
 
       <ShopByConcern concerns={concerns} />
-
-      <TestimonialsSection />
 
       {bestSellers.length > 0 && (
         <ProductCarousel title="Best Sellers" products={bestSellers} viewAllHref="/category/best-seller" />

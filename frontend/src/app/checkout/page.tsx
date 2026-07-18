@@ -43,6 +43,9 @@ const DELIVERY_OPTIONS: {
   { zone: "outside_dhaka", label: "Outside Dhaka", fee: 120, estimate: "Delivery in 2-3 days" },
 ];
 
+/** Subtotal (BDT) at or above which delivery is free. Mirrors the server. */
+const FREE_DELIVERY_THRESHOLD = 3000;
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -160,10 +163,19 @@ export default function CheckoutPage() {
   // the same product, mirroring the cart page and the final order lines.
   const summaryRows = splitCartRows(items, stock);
   const selected = DELIVERY_OPTIONS.find((o) => o.zone === zone) ?? null;
-  const total = selected ? subtotal + selected.fee : null;
 
   // Address is built from the cascading location selection.
   const divisionName = divisions.find((d) => d.id === divisionId)?.name ?? "";
+
+  // Free delivery unlocks at the threshold — the priced zone options are hidden
+  // and the zone is derived from the chosen division (Dhaka → inside Dhaka) so
+  // the order still records an accurate zone + estimate for logistics.
+  const freeDelivery = subtotal >= FREE_DELIVERY_THRESHOLD;
+  const derivedZone: DeliveryZone = divisionName === "Dhaka" ? "inside_dhaka" : "outside_dhaka";
+  const effectiveZone: DeliveryZone | null = freeDelivery ? derivedZone : zone;
+  const deliveryFee = freeDelivery ? 0 : selected?.fee ?? null;
+  const total =
+    deliveryFee !== null ? subtotal + deliveryFee : null;
   const districtName = districts.find((d) => d.id === districtId)?.name ?? "";
   const upazilaName = upazilas.find((u) => u.id === upazilaId)?.name ?? "";
   const locationChosen = Boolean(divisionId && districtId && upazilaId);
@@ -189,11 +201,13 @@ export default function CheckoutPage() {
     !errors.address &&
     !errors.bkashTxn &&
     !errors.bkashAmount &&
-    zone !== null;
+    // Free-delivery orders derive the zone from the address; otherwise the
+    // customer must pick a priced delivery option.
+    (freeDelivery || zone !== null);
 
   const placeOrder = async () => {
     setTouched({ fullName: true, phone: true, address: true, bkashTxn: true, bkashAmount: true });
-    if (!formValid || !zone) return;
+    if (!formValid || !effectiveZone) return;
 
     setSubmitting(true);
     setError(null);
@@ -205,7 +219,7 @@ export default function CheckoutPage() {
         fullName: fullName.trim(),
         phone: phone.trim(),
         address: composedAddress,
-        deliveryZone: zone,
+        deliveryZone: effectiveZone,
         paymentMethod,
         ...(paymentMethod === "bkash"
           ? { bkashTransactionId: bkashTxn.trim(), bkashAmount: bkashAmountNum }
@@ -325,7 +339,22 @@ export default function CheckoutPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">Select Delivery Option</h2>
+            <h2 className="text-lg font-semibold mb-3">Delivery</h2>
+            {freeDelivery ? (
+              <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+                <span className="mt-0.5 inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-green-100 text-green-700">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 13h13V5H3zM16 8h4l1 3v2h-5zM7.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM17.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
+                  </svg>
+                </span>
+                <div>
+                  <p className="font-semibold text-green-800">Free delivery unlocked!</p>
+                  <p className="mt-0.5 text-sm text-green-700">
+                    Your order qualifies for free delivery anywhere in Bangladesh — no delivery charge.
+                  </p>
+                </div>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {DELIVERY_OPTIONS.map((option) => {
                 const active = zone === option.zone;
@@ -361,6 +390,7 @@ export default function CheckoutPage() {
                 );
               })}
             </div>
+            )}
           </section>
 
           <section>
@@ -454,7 +484,13 @@ export default function CheckoutPage() {
               <div className="flex justify-between">
                 <span className="text-muted">Delivery</span>
                 <span className="font-semibold">
-                  {selected ? formatPrice(selected.fee) : <span className="text-muted font-normal">Select delivery option</span>}
+                  {freeDelivery ? (
+                    <span className="text-green-700">Free</span>
+                  ) : selected ? (
+                    formatPrice(selected.fee)
+                  ) : (
+                    <span className="text-muted font-normal">Select delivery option</span>
+                  )}
                 </span>
               </div>
               <div className="flex justify-between border-t border-border pt-2 text-base">

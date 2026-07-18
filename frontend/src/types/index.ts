@@ -201,11 +201,20 @@ export interface CreateOrderPayload {
   items: Array<{ productId: string; quantity: number }>;
 }
 
-/** Lean shape served by GET /testimonials — only what the carousel renders. */
-export interface TestimonialVideo {
+/** Lean shape served by GET /announcements — the scrolling promo bar. */
+export interface Announcement {
   id: string;
-  title: string;
-  videoUrl: string;
-  posterUrl: string;
-  orderId: number;
+  text: string;
+  sortOrder: number;
+}
+
+export type FaqSegment = "products" | "orders" | "delivery" | "returns";
+
+/** Lean shape served by GET /faq — active Help Centre questions. */
+export interface FaqItem {
+  id: string;
+  segment: FaqSegment;
+  question: string;
+  answer: string;
+  sortOrder: number;
 }

@@ -13,13 +13,23 @@ export interface HeroSlide {
   createdAt: string;
 }
 
-export interface TestimonialVideo {
+export interface Announcement {
   id: string;
-  title: string;
-  description: string | null;
-  videoUrl: string;
-  posterUrl: string;
-  orderId: number;
+  text: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FaqSegment = "products" | "orders" | "delivery" | "returns";
+
+export interface FaqItem {
+  id: string;
+  segment: FaqSegment;
+  question: string;
+  answer: string;
+  sortOrder: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

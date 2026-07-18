@@ -1,0 +1,1 @@
+DROP TABLE "testimonial_videos" CASCADE;
