@@ -97,28 +97,64 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className={`md:hidden fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t border-border pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ${
-        visible ? "translate-y-0" : "translate-y-full"
+      className={`md:hidden fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ${
+        // Hiding travels an extra 2.5rem past the bar's own height: the raised
+        // cart button overhangs the top edge and would otherwise stay on screen.
+        visible ? "translate-y-0" : "translate-y-[calc(100%+2.5rem)]"
       }`}
     >
-      <ul className="flex items-stretch justify-around">
+      {/*
+        The bar's surface is its own layer so the notch can be masked out of it:
+        a CSS mask applies to an element's whole painted subtree, so masking the
+        <nav> itself would take a bite out of the cart button too. The hole is a
+        36px-radius circle centred on the button (50% across, 8px down from the
+        top edge), leaving an even 8px gap around the 56px button.
+      */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-background/95 backdrop-blur border-t border-border [mask-image:radial-gradient(circle_36px_at_50%_8px,transparent_0_36px,black_37px)] [-webkit-mask-image:radial-gradient(circle_36px_at_50%_8px,transparent_0_36px,black_37px)]"
+      />
+
+      <ul className="relative flex items-stretch justify-around">
         {ITEMS.map((item) => {
           const isActive = Boolean(item.href) && pathname === item.href;
-          const inner = (
+          const isCart = item.label === "Cart";
+
+          const badge = cartCount > 0 && (
+            <span
+              className={`absolute inline-flex items-center justify-center rounded-full text-[10px] font-semibold leading-none ${
+                isCart
+                  ? // Sits on the circle's rim rather than off its bounding box.
+                    "top-0 right-0 min-w-[18px] h-[18px] px-1 bg-foreground text-white ring-2 ring-background"
+                  : "-top-1.5 -right-2 min-w-[16px] h-4 px-0.5 bg-primary text-white"
+              }`}
+            >
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
+          );
+
+          // The cart is a solid circle straddling the bar's top edge, with the
+          // icon over its label so the two read as one unit. Separation comes
+          // from the notch masked out of the bar behind it — no ring or shadow.
+          const inner = isCart ? (
+            <span className="relative -mt-7 inline-flex h-14 w-14 flex-col items-center justify-center gap-0.5 rounded-full bg-primary text-white transition-transform duration-200 active:scale-95 [&_svg]:h-[23px] [&_svg]:w-[23px]">
+              {item.icon}
+              <span className="text-[9px] font-semibold leading-none tracking-wide">{item.label}</span>
+              {badge}
+            </span>
+          ) : (
             <>
-              <span className="relative">
-                {item.icon}
-                {item.label === "Cart" && cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-0.5 inline-flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-semibold leading-none">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
-              </span>
+              <span className="relative">{item.icon}</span>
               {item.label}
             </>
           );
+
           const className = `relative flex w-full flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
-            isActive ? "text-primary" : "text-muted hover:text-primary"
+            isCart
+              ? "text-foreground"
+              : isActive
+                ? "text-primary"
+                : "text-muted hover:text-primary"
           }`;
           return (
             <li key={item.label} className="flex-1">

@@ -73,14 +73,8 @@ export default function Footer({ announcements = [] }: { announcements?: Announc
               <p className="text-sm font-semibold uppercase tracking-wider mb-3">Announcements</p>
               <ul className="space-y-2.5">
                 {announcements.map((announcement) => (
-                  <li
-                    key={announcement.id}
-                    className="flex gap-2 text-sm text-muted leading-relaxed"
-                  >
-                    <span className="mt-0.5 shrink-0 text-primary" aria-hidden>
-                      ✦
-                    </span>
-                    <span>{announcement.text}</span>
+                  <li key={announcement.id} className="text-sm text-muted leading-relaxed">
+                    {announcement.text}
                   </li>
                 ))}
               </ul>

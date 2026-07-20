@@ -39,7 +39,10 @@ export default function ProductCard({ product }: { product: Product }) {
       </Link>
 
       <div className="flex flex-1 flex-col p-3">
-        <h3 className="text-sm font-medium leading-snug line-clamp-2 min-h-[2.5rem]">
+        {/* Mobile gets 3 lines before truncating (long J-beauty names need the
+            room); from sm up the tighter 2-line clamp keeps card heights even.
+            The min-h reserves the full clamp height so prices stay aligned. */}
+        <h3 className="text-sm font-medium leading-snug line-clamp-3 min-h-[3.75rem] sm:line-clamp-2 sm:min-h-[2.5rem]">
           <Link
             href={`/product/${product.slug}`}
             className="hover:text-primary transition-colors"
