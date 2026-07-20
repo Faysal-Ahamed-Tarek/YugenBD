@@ -1,5 +1,6 @@
 import { ApiError } from "../../utils/ApiError";
 import { sendNewOrderEmail } from "../../config/mailer";
+import { locationRepository } from "../locations/location.repository";
 import { orderRepository } from "./order.repository";
 import type { CreateOrderInput, CreateManualOrderInput, ListOrdersQuery, OrderStatus } from "./order.validators";
 
@@ -32,6 +33,33 @@ function productPrice(product: { basePrice: string; discountPrice: string | null
 }
 
 /**
+ * Compose the stored address text for a manual order. When the admin picked a
+ * division → district → upazila the chain is verified against the seeded
+ * hierarchy (a mismatched pair is a client bug, not a valid address) and the
+ * text is built from the canonical NAMES, so it reads the same as a storefront
+ * order. Falls back to the typed address when no location was selected.
+ */
+async function resolveManualAddress(input: Omit<CreateManualOrderInput, "status">) {
+  const { divisionId, districtId, upazilaId, area } = input;
+  if (!divisionId || !districtId || !upazilaId || !area) {
+    if (!input.address) throw ApiError.badRequest("A delivery address is required.");
+    return input.address;
+  }
+
+  const [division, district, upazila] = await Promise.all([
+    locationRepository.findDivisionById(divisionId),
+    locationRepository.findDistrictById(districtId),
+    locationRepository.findUpazilaById(upazilaId),
+  ]);
+  if (!division || !district || !upazila) throw ApiError.badRequest("Invalid delivery location.");
+  if (district.divisionId !== division.id || upazila.districtId !== district.id) {
+    throw ApiError.badRequest("The selected district / upazila does not belong to that division.");
+  }
+
+  return `${area}, ${upazila.name}, ${district.name}, ${division.name}`;
+}
+
+/**
  * Shared order builder: validates products, computes authoritative prices +
  * delivery, decrements stock, and inserts the order atomically. Stock never
  * blocks an order: whatever stock can cover ships as a regular line, and any
@@ -40,7 +68,7 @@ function productPrice(product: { basePrice: string; discountPrice: string | null
  * (5 regular + 5 pre-order) and only the covered 5 are decremented.
  */
 async function buildAndInsertOrder(
-  input: Omit<CreateManualOrderInput, "status">,
+  input: Omit<CreateManualOrderInput, "status" | "address"> & { address: string },
   status: OrderStatus = "pending",
   userId: string | null = null
 ) {
@@ -142,9 +170,10 @@ export const orderService = {
   },
 
   /** Admin manual order — same pricing integrity, plus an admin-set status. */
-  createManual(input: CreateManualOrderInput) {
+  async createManual(input: CreateManualOrderInput) {
     const { status, ...rest } = input;
-    return buildAndInsertOrder(rest, status ?? "confirmed");
+    const address = await resolveManualAddress(rest);
+    return buildAndInsertOrder({ ...rest, address }, status ?? "confirmed");
   },
 
   async getById(id: string) {

@@ -62,15 +62,21 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top 10 best sellers */}
+        {/* Top 20 best sellers */}
         <section className="rounded-2xl border border-border bg-background p-5">
-          <h2 className="mb-4 font-semibold">Top 10 Best Sellers</h2>
+          <h2 className="mb-4 font-semibold">
+            Top Selling Products
+            {topSellers !== null && topSellers.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-muted">({topSellers.length})</span>
+            )}
+          </h2>
           {topSellers === null ? (
             <p className="text-sm text-muted">Loading…</p>
           ) : topSellers.length === 0 ? (
             <p className="text-sm text-muted">No sales yet.</p>
           ) : (
-            <ul className="divide-y divide-border">
+            // Capped height so a full 20 rows doesn't stretch the dashboard.
+            <ul className="max-h-[30rem] divide-y divide-border overflow-y-auto">
               {topSellers.map((p, i) => (
                 <li key={p.productId ?? i} className="flex items-center gap-3 py-2.5">
                   <span className="w-5 text-sm font-semibold text-muted">{i + 1}</span>
@@ -92,13 +98,19 @@ export default function DashboardPage() {
 
         {/* Low inventory */}
         <section className="rounded-2xl border border-border bg-background p-5">
-          <h2 className="mb-4 font-semibold">Low Inventory (&lt;10)</h2>
+          <h2 className="mb-4 font-semibold">
+            Low Inventory (&lt;10)
+            {lowStock !== null && lowStock.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-muted">({lowStock.length})</span>
+            )}
+          </h2>
           {lowStock === null ? (
             <p className="text-sm text-muted">Loading…</p>
           ) : lowStock.length === 0 ? (
             <p className="text-sm text-muted">All products are well stocked.</p>
           ) : (
-            <ul className="divide-y divide-border">
+            // Capped height so a full 20 rows doesn't stretch the dashboard.
+            <ul className="max-h-[30rem] divide-y divide-border overflow-y-auto">
               {lowStock.map((p) => {
                 const tone = p.stock <= 3 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
                 return (

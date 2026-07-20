@@ -154,6 +154,53 @@ export interface OrderCounts {
   total: number;
 }
 
+/** One row of the cascading division → district → upazila selector. */
+export interface LocationOption {
+  id: string;
+  name: string;
+}
+
+/** A customer row in the admin directory — GET /admin/users. */
+export interface CustomerListItem {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string;
+  emailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+  /** From the default shipping address; null when the customer has none. */
+  divisionName: string | null;
+  districtName: string | null;
+  orderCount: number;
+}
+
+/** A customer's default shipping address, with resolved location names. */
+export interface CustomerAddress {
+  id: string;
+  fullName: string | null;
+  phone: string | null;
+  /** The typed area / house / road line (`street_address` on the row). */
+  addressLine1: string;
+  divisionName: string;
+  districtName: string;
+  upazilaName: string;
+}
+
+/** GET /admin/users/:id — account + shipping details + purchase history. */
+export interface CustomerDetail {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string;
+  emailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+  address: CustomerAddress | null;
+  orders: Order[];
+  stats: { orderCount: number; totalSpent: string };
+}
+
 export type ReviewStatus = "pending" | "approved" | "rejected";
 
 export interface Review {

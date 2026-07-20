@@ -153,7 +153,9 @@ export default function AdminTable<T>({
                     </td>
                   ))}
                   {hasActions && (
-                    <td className="px-4 py-3">
+                    // stopPropagation: on a table that also has onRowClick, an
+                    // action click must not additionally navigate the row.
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {onEdit && (
                           <button

@@ -19,6 +19,7 @@ import faqRoutes from "./modules/faq/faq.routes";
 import announcementRoutes from "./modules/announcements/announcement.routes";
 import locationRoutes from "./modules/locations/location.routes";
 import addressRoutes from "./modules/addresses/address.routes";
+import adminUserRoutes from "./modules/users/user.routes";
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use("/api/v1/admin/reviews", adminReviewRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin/dashboard", dashboardRoutes);
+app.use("/api/v1/admin/users", adminUserRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -24,8 +24,9 @@ const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
-  // Inbox that receives a notification for every customer order.
-  ORDER_NOTIFICATION_EMAIL: z.string().email().default("yugenbd@gmail.com"),
+  // Inbox that receives a notification for every customer order. Defaults to
+  // the shop's own Gmail — the same account SMTP authenticates as.
+  ORDER_NOTIFICATION_EMAIL: z.string().email().default("bdyugen@gmail.com"),
   ADMIN1_NAME: z.string().default("Faysal"),
   ADMIN1_EMAIL: z.string().email().default("faysal.ahamed.tarek1@gmail.com"),
   ADMIN1_PASSWORD: z.string().min(8).default("Rz6#mVbK9tXpL2q"),

@@ -26,6 +26,7 @@ const NAV: NavItem[] = [
   { label: "Categories", href: "/categories", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
   { label: "Concerns", href: "/concerns", icon: "M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" },
   { label: "Orders", href: "/orders", icon: "M6 7h12l1 13H5L6 7zM9 7V5a3 3 0 0 1 6 0v2" },
+  { label: "Users", href: "/users", icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0" },
   { label: "Reviews", href: "/reviews", icon: "M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5L12 3z" },
   {
     label: "Pages",

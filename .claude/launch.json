@@ -24,6 +24,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start", "--prefix", "/home/faysal/Desktop/YugenBD/admin"],
       "port": 3001
+    },
+    {
+      "name": "admin-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "/home/faysal/Desktop/YugenBD/admin"],
+      "port": 3001
     }
   ]
 }

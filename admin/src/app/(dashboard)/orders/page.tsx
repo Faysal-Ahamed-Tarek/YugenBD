@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { formatPrice, formatDate, ORDER_STATUSES, STATUS_STYLES } from "@/lib/format";
 import type { Order, OrderCounts } from "@/lib/types";
 import AdminTable, { type Column } from "@/components/ui/AdminTable";
-import ManualOrderModal from "@/components/ManualOrderModal";
 
 const TABS = ["all", ...ORDER_STATUSES] as const;
 
@@ -17,7 +17,6 @@ export default function OrdersPage() {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<(typeof TABS)[number]>("all");
   const [reloadKey, setReloadKey] = useState(0);
-  const [manualOpen, setManualOpen] = useState(false);
   const [counts, setCounts] = useState<OrderCounts | null>(null);
   const filterRef = useRef(statusFilter);
   filterRef.current = statusFilter;
@@ -106,24 +105,13 @@ export default function OrdersPage() {
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setManualOpen(true)}
+        <Link
+          href="/orders/manual"
           className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
         >
           + Manual Order
-        </button>
+        </Link>
       </div>
-
-      {manualOpen && (
-        <ManualOrderModal
-          onClose={() => setManualOpen(false)}
-          onCreated={() => {
-            setManualOpen(false);
-            setReloadKey((k) => k + 1);
-          }}
-        />
-      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {TABS.map((tab) => {

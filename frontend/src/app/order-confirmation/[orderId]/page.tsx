@@ -36,12 +36,7 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
     <div className="mx-auto max-w-3xl px-4 py-8 md:py-12">
       {/* Success header */}
       <div className="text-center">
-        <span className="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary-light text-primary">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M5 12.5l4.5 4.5L19 7" />
-          </svg>
-        </span>
-        <h1 className="mt-4 text-2xl md:text-3xl font-semibold">Order placed successfully</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold">Order placed successfully</h1>
         <p className="mt-2 text-sm text-muted">
           Thank you, {order.fullName.split(" ")[0]}! We&apos;ll call you to confirm before shipping.
         </p>

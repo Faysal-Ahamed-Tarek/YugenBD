@@ -40,7 +40,7 @@ export default async function RootLayout({
           <AnnouncementMarquee items={announcements} />
           <Header />
           <main className="flex-1">{children}</main>
-          <Footer />
+          <Footer announcements={announcements} />
           <BottomNav />
         </AuthProvider>
       </body>
