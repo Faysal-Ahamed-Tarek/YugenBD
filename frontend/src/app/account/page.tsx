@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { authApi, ApiError } from "@/lib/authClient";
 import ProductImage from "@/components/product/ProductImage";
+import PasswordInput from "@/components/ui/PasswordInput";
 import type { Order, LocationOption, ShippingAddress } from "@/types";
 
 type Tab = "shipping" | "orders" | "password";
@@ -359,9 +360,8 @@ function ChangePassword() {
           <label htmlFor="currentPassword" className="block text-base font-medium mb-1.5">
             Current password
           </label>
-          <input
+          <PasswordInput
             id="currentPassword"
-            type="password"
             autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => {
@@ -376,9 +376,8 @@ function ChangePassword() {
           <label htmlFor="newPassword" className="block text-base font-medium mb-1.5">
             New password
           </label>
-          <input
+          <PasswordInput
             id="newPassword"
-            type="password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => {
@@ -394,9 +393,8 @@ function ChangePassword() {
           <label htmlFor="confirmPassword" className="block text-base font-medium mb-1.5">
             Confirm new password
           </label>
-          <input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => {

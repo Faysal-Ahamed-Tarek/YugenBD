@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import type { LocationOption } from "@/types";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const BD_PHONE = /^01[3-9]\d{8}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -230,8 +231,8 @@ export default function RegisterPage() {
 
         <div>
           <label className="block text-base font-medium mb-1.5">Password</label>
-          <input
-            type="password"
+          <PasswordInput
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 8 characters"
@@ -240,8 +241,8 @@ export default function RegisterPage() {
         </div>
         <div>
           <label className="block text-base font-medium mb-1.5">Confirm password</label>
-          <input
-            type="password"
+          <PasswordInput
+            autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Re-enter your password"

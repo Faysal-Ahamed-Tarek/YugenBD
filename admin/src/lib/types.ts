@@ -137,6 +137,21 @@ export interface Order {
   paymentStatus: PaymentStatus;
   createdAt: string;
   items: OrderItem[];
+  /**
+   * True when the order's phone number belongs to a registered account.
+   * Only present on the admin list (GET /orders), not on the detail read.
+   */
+  hasAccount?: boolean;
+}
+
+/** Order counts per status + total — GET /orders/counts (admin). */
+export interface OrderCounts {
+  pending: number;
+  confirmed: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+  total: number;
 }
 
 export type ReviewStatus = "pending" | "approved" | "rejected";

@@ -109,11 +109,34 @@ export const orderRepository = {
         limit: query.limit,
         offset,
         with: { items: { orderBy: asc(orderItems.title) } },
+        // Does this order's phone belong to a registered account? Drives the
+        // Account column in the admin list. Matched on phone (not userId) so
+        // guest checkouts by an existing customer still count as registered.
+        //
+        // The users side is written as raw SQL with its own alias `u`: inside
+        // `extras` the relational query builder rewrites interpolated column
+        // objects to the OUTER table's alias, which silently turned
+        // `users.phone = orders.phone` into `orders.phone = orders.phone`
+        // (always true). Only ${orders.phone} may be interpolated here.
+        extras: {
+          hasAccount: sql<boolean>`exists (
+            select 1 from "users" u where u."phone" = ${orders.phone}
+          )`.as("has_account"),
+        },
       }),
       db.select({ count: sql<number>`count(*)::int` }).from(orders).where(where),
     ]);
 
     return { rows, total: count };
+  },
+
+  /** Order count per status (admin badge / tab counters). */
+  async countByStatus() {
+    const rows = await db
+      .select({ status: orders.status, count: sql<number>`count(*)::int` })
+      .from(orders)
+      .groupBy(orders.status);
+    return rows;
   },
 
   updateStatus(id: string, status: OrderStatus) {

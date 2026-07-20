@@ -244,7 +244,21 @@
       "Bash(curl -s http://localhost:4000/api/v1/announcements)",
       "Bash(curl -s http://localhost:4000/api/v1/locations/divisions)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\([x['name'] for x in d.get\\('data',[]\\)]\\)\")",
-      "Bash(curl -s \"http://localhost:4000/api/v1/products?limit=3\")"
+      "Bash(curl -s \"http://localhost:4000/api/v1/products?limit=3\")",
+      "Bash(ps -p 6108 -o args=)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(git -C .. stash push -q --keep-index)",
+      "Bash(cd /home/faysal/Desktop/YugenBD/frontend/src && grep -rn \"Don't have an account\\\\|Don&apos;t have an account\\\\|Create one\" . ; echo \"=== password inputs ===\"; grep -rln \"type=\\\\\"password\\\\\"\" . ../../admin/src)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/manual-images/YugenBdTransparent.png\")",
+      "Bash(cp frontend/public/manual-images/YugenBdTransparent.png admin/public/logo.png)",
+      "Bash(cd /home/faysal/Desktop/YugenBD/admin && npx tsc --noEmit 2>&1 | head -20; echo \"--- FRONTEND ---\"; cd ../frontend && npx tsc --noEmit 2>&1 | head -20)",
+      "Bash(SMTP_USER= SMTP_PASS= npx tsx /tmp/claude-1000/-home-faysal-Desktop-YugenBD/0746bab5-0adb-423d-aed6-3bc182fafd50/scratchpad/check.ts)",
+      "Bash(SMTP_USER= SMTP_PASS= npx tsx /tmp/claude-1000/-home-faysal-Desktop-YugenBD/0746bab5-0adb-423d-aed6-3bc182fafd50/scratchpad/check2.ts)",
+      "Bash(SMTP_USER= SMTP_PASS= npx tsx _check2.ts)",
+      "Bash(SMTP_USER= SMTP_PASS= npx tsx _check3.ts)",
+      "Bash(SMTP_USER= SMTP_PASS= npx tsx _check4.ts)",
+      "Bash(SMTP_USER= SMTP_PASS= npx tsx _check5.ts)",
+      "Bash(SMTP_USER= SMTP_PASS= npx tsx _check6.ts)"
     ]
   }
 }

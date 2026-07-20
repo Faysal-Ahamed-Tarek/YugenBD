@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -70,8 +71,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
   return (
     <div>
       <label className="block text-sm font-medium mb-1.5">{label}</label>
-      <input
-        type="password"
+      <PasswordInput
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required

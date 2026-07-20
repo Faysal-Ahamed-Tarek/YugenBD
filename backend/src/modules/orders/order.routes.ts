@@ -6,6 +6,7 @@ import {
   createOrder,
   getOrder,
   getOrderPdf,
+  getOrderCounts,
   listOrders,
   listMyOrders,
   createManualOrder,
@@ -25,6 +26,7 @@ router.get("/mine", requireAuth, asyncHandler(listMyOrders));
 
 // Admin-only management routes (declared before /:id so they aren't shadowed).
 router.get("/", requireAuth, requireRole("admin"), asyncHandler(listOrders));
+router.get("/counts", requireAuth, requireRole("admin"), asyncHandler(getOrderCounts));
 router.post("/manual", requireAuth, requireRole("admin"), asyncHandler(createManualOrder));
 router.patch("/:id/status", requireAuth, requireRole("admin"), asyncHandler(updateOrderStatus));
 router.patch("/:id/payment-status", requireAuth, requireRole("admin"), asyncHandler(updatePaymentStatus));

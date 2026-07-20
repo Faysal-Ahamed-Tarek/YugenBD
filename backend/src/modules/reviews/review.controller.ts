@@ -45,6 +45,12 @@ export async function updateReviewStatus(req: Request, res: Response) {
   sendSuccess(res, review);
 }
 
+export async function deleteReview(req: Request, res: Response) {
+  const { id } = reviewIdParamSchema.parse(req.params);
+  await reviewService.remove(id);
+  sendSuccess(res, { id });
+}
+
 export async function createAdminReview(req: Request, res: Response) {
   const { imageUrl, ...input } = adminCreateReviewSchema.parse(req.body);
   const review = await reviewService.createByAdmin(input, imageUrl);

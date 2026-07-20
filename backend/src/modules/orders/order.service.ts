@@ -1,4 +1,5 @@
 import { ApiError } from "../../utils/ApiError";
+import { sendNewOrderEmail } from "../../config/mailer";
 import { orderRepository } from "./order.repository";
 import type { CreateOrderInput, CreateManualOrderInput, ListOrdersQuery, OrderStatus } from "./order.validators";
 
@@ -127,8 +128,12 @@ async function buildAndInsertOrder(
 
 export const orderService = {
   // `userId` links the order to the logged-in customer (null for guests).
-  create(input: CreateOrderInput, userId: string | null = null) {
-    return buildAndInsertOrder(input, "pending", userId);
+  async create(input: CreateOrderInput, userId: string | null = null) {
+    const order = await buildAndInsertOrder(input, "pending", userId);
+    // Notify the shop inbox. Deliberately NOT awaited: sendNewOrderEmail never
+    // throws (the mailer swallows failures), and checkout must not wait on SMTP.
+    void sendNewOrderEmail(order);
+    return order;
   },
 
   /** Order history for a logged-in customer, newest first. */
@@ -160,6 +165,27 @@ export const orderService = {
         hasMore: query.page * query.limit < total,
       },
     };
+  },
+
+  /**
+   * Counts per order status, zero-filled for statuses with no rows, plus a
+   * total. The admin polls this for the "pending orders" badge.
+   */
+  async counts() {
+    const rows = await orderRepository.countByStatus();
+    const byStatus: Record<OrderStatus, number> = {
+      pending: 0,
+      confirmed: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+    };
+    let total = 0;
+    for (const row of rows) {
+      byStatus[row.status] = row.count;
+      total += row.count;
+    }
+    return { ...byStatus, total };
   },
 
   async updateStatus(id: string, status: OrderStatus) {

@@ -81,6 +81,13 @@ export const reviewService = {
     return updated;
   },
 
+  /** Permanently delete a review (and its images via cascade). Admin only. */
+  async remove(id: string) {
+    const deleted = await reviewRepository.deleteById(id);
+    if (!deleted) throw ApiError.notFound("Review not found");
+    return deleted;
+  },
+
   /** Admin-authored review — created approved + verified, visible immediately. */
   async createByAdmin(input: CreateReviewInput, imageUrl?: string) {
     const product = await reviewRepository.findProduct(input.productId);

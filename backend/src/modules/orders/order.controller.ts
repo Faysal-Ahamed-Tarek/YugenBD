@@ -29,6 +29,13 @@ export async function listOrders(req: Request, res: Response) {
   sendSuccess(res, result.items, 200, { pagination: result.pagination });
 }
 
+export async function getOrderCounts(_req: Request, res: Response) {
+  const counts = await orderService.counts();
+  // Short private cache: the admin polls this for the pending badge.
+  res.setHeader("Cache-Control", "private, max-age=10");
+  sendSuccess(res, counts);
+}
+
 export async function createManualOrder(req: Request, res: Response) {
   const input = createManualOrderSchema.parse(req.body);
   const order = await orderService.createManual(input);

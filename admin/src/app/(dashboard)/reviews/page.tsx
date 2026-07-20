@@ -7,6 +7,7 @@ import { formatDate, REVIEW_STATUSES, REVIEW_STATUS_STYLES } from "@/lib/format"
 import type { Product, Review, ReviewStatus } from "@/lib/types";
 import AdminTable, { type Column } from "@/components/ui/AdminTable";
 import Modal from "@/components/ui/Modal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import SingleImageUpload from "@/components/ui/SingleImageUpload";
 
 const TABS = ["all", ...REVIEW_STATUSES] as const;
@@ -35,6 +36,17 @@ export default function ReviewsPage() {
 
   const setStatus = async (review: Review, status: "approved" | "rejected") => {
     await api.patch(`/admin/reviews/${review.id}/status`, { status });
+    reload();
+  };
+
+  // Permanent delete (row + its images), distinct from "Reject" which keeps
+  // the review for the record. Confirmed first — there is no undo.
+  // ConfirmDialog owns the loading/error state; it closes on success.
+  const [deleting, setDeleting] = useState<Review | null>(null);
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    await api.del(`/admin/reviews/${deleting.id}`);
     reload();
   };
 
@@ -94,6 +106,17 @@ export default function ReviewsPage() {
               Reject
             </button>
           )}
+          <button
+            type="button"
+            aria-label={`Delete review by ${r.name}`}
+            title="Delete permanently"
+            onClick={() => setDeleting(r)}
+            className="p-1.5 rounded-lg text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" />
+            </svg>
+          </button>
         </div>
       ),
     },
@@ -133,6 +156,21 @@ export default function ReviewsPage() {
         getRowKey={(r) => r.id}
         searchPlaceholder="Search by reviewer or product…"
         reloadKey={reloadKey}
+      />
+
+      <ConfirmDialog
+        open={deleting !== null}
+        title="Delete review?"
+        message={
+          deleting
+            ? `This permanently deletes ${deleting.name}'s review${
+                deleting.product ? ` of ${deleting.product.title}` : ""
+              } and its images. This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete review"
+        onConfirm={confirmDelete}
+        onClose={() => setDeleting(null)}
       />
 
       {adding && (

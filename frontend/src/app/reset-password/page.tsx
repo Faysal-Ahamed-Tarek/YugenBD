@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { authApi, ApiError } from "@/lib/authClient";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function ResetPasswordPage() {
   // useSearchParams requires a Suspense boundary in the App Router.
@@ -94,9 +95,8 @@ function ResetPasswordForm() {
           <label htmlFor="newPassword" className="block text-base font-medium mb-1.5">
             New password
           </label>
-          <input
+          <PasswordInput
             id="newPassword"
-            type="password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -108,9 +108,8 @@ function ResetPasswordForm() {
           <label htmlFor="confirmPassword" className="block text-base font-medium mb-1.5">
             Confirm new password
           </label>
-          <input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}

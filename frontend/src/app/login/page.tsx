@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { authApi } from "@/lib/authClient";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const BD_PHONE = /^01[3-9]\d{8}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -80,8 +81,8 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <input
-            type="password"
+          <PasswordInput
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary-light"
@@ -118,7 +119,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-base text-muted">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="font-medium text-primary hover:underline">
-          Create one
+          Create an Account
         </Link>
       </p>
     </div>

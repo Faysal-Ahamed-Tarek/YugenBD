@@ -56,11 +56,14 @@ async function send(opts: {
   subject: string;
   text: string;
   html: string;
-  link: string;
+  /** Present on link-driven mails (verify / reset) — logged when SMTP is off. */
+  link?: string;
   kind: string;
 }): Promise<void> {
   if (!transporter) {
-    console.log(`[mailer] SMTP not configured. ${opts.kind} link for ${opts.to}:\n${opts.link}`);
+    console.log(
+      `[mailer] SMTP not configured. ${opts.kind} for ${opts.to}:\n${opts.link ?? opts.text}`
+    );
     return;
   }
   try {
@@ -168,4 +171,105 @@ export async function sendPasswordResetEmail(
   });
 
   await send({ to, subject, text, html, link: resetLink, kind: "password reset" });
+}
+
+/* ───────────────────────── Order notification ───────────────────────── */
+
+/** Just the order fields the notification needs — kept local so the mailer
+ *  doesn't depend on the orders module (which imports the mailer). */
+export interface OrderNotification {
+  id: string;
+  fullName: string;
+  phone: string;
+  address: string;
+  deliveryZone: "inside_dhaka" | "outside_dhaka";
+  deliveryFee: string;
+  subtotal: string;
+  total: string;
+  paymentMethod: "cod" | "bkash";
+  bkashTransactionId: string | null;
+  bkashAmount: string | null;
+  items: { title: string; price: string; quantity: number; isPreOrder: boolean }[];
+}
+
+const taka = (value: string) => `৳${Math.round(Number(value)).toLocaleString("en-US")}`;
+
+/**
+ * Notify the shop inbox (ORDER_NOTIFICATION_EMAIL) that an order came in.
+ * Fire-and-forget: `send` already swallows failures, so a mail outage can
+ * never block or fail the customer's checkout.
+ */
+export async function sendNewOrderEmail(order: OrderNotification): Promise<void> {
+  const to = env.ORDER_NOTIFICATION_EMAIL;
+  const shortId = order.id.slice(0, 8);
+  const zone = order.deliveryZone === "inside_dhaka" ? "Inside Dhaka" : "Outside Dhaka";
+  const payment =
+    order.paymentMethod === "bkash"
+      ? `bKash — txn ${order.bkashTransactionId ?? "—"} (${order.bkashAmount ? taka(order.bkashAmount) : "—"}) · NEEDS VERIFICATION`
+      : "Cash on Delivery";
+
+  const subject = `New order #${shortId} — ${taka(order.total)} · ${order.fullName}`;
+
+  const lines = order.items.map(
+    (i) => `- ${i.title}${i.isPreOrder ? " [PRE-ORDER]" : ""} × ${i.quantity} — ${taka(String(Number(i.price) * i.quantity))}`
+  );
+  const text = [
+    `New order #${shortId}`,
+    "",
+    `Customer: ${order.fullName}`,
+    `Phone:    ${order.phone}`,
+    `Address:  ${order.address}`,
+    `Delivery: ${zone} (${taka(order.deliveryFee)})`,
+    `Payment:  ${payment}`,
+    "",
+    "Items:",
+    ...lines,
+    "",
+    `Subtotal: ${taka(order.subtotal)}`,
+    `Delivery: ${Number(order.deliveryFee) === 0 ? "Free" : taka(order.deliveryFee)}`,
+    `Total:    ${taka(order.total)}`,
+  ].join("\n");
+
+  const rows = order.items
+    .map(
+      (i) => `
+        <tr>
+          <td style="padding:6px 0; border-bottom:1px solid #e7e7ea;">
+            ${i.title}${i.isPreOrder ? ' <span style="color:#b45309; font-size:12px;">(pre-order)</span>' : ""}
+          </td>
+          <td style="padding:6px 0; border-bottom:1px solid #e7e7ea; text-align:center;">×${i.quantity}</td>
+          <td style="padding:6px 0; border-bottom:1px solid #e7e7ea; text-align:right;">${taka(
+            String(Number(i.price) * i.quantity)
+          )}</td>
+        </tr>`
+    )
+    .join("");
+
+  const html = `
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width: 560px; margin: 0 auto; color: #171717;">
+      <h2 style="margin:0 0 4px;">New order #${shortId}</h2>
+      <p style="margin:0 0 20px; color:#6b6b6b; font-size:13px;">${payment}</p>
+
+      <table style="width:100%; font-size:14px; border-collapse:collapse;">
+        <tr><td style="color:#6b6b6b; width:90px;">Customer</td><td><strong>${order.fullName}</strong></td></tr>
+        <tr><td style="color:#6b6b6b;">Phone</td><td>${order.phone}</td></tr>
+        <tr><td style="color:#6b6b6b; vertical-align:top;">Address</td><td>${order.address}</td></tr>
+        <tr><td style="color:#6b6b6b;">Delivery</td><td>${zone}</td></tr>
+      </table>
+
+      <table style="width:100%; font-size:14px; border-collapse:collapse; margin-top:20px;">
+        ${rows}
+        <tr><td style="padding-top:10px; color:#6b6b6b;">Subtotal</td><td></td><td style="padding-top:10px; text-align:right;">${taka(order.subtotal)}</td></tr>
+        <tr><td style="color:#6b6b6b;">Delivery</td><td></td><td style="text-align:right;">${
+          Number(order.deliveryFee) === 0 ? "Free" : taka(order.deliveryFee)
+        }</td></tr>
+        <tr><td style="font-weight:bold; padding-top:6px;">Total</td><td></td><td style="font-weight:bold; text-align:right; padding-top:6px; color:#765341;">${taka(
+          order.total
+        )}</td></tr>
+      </table>
+
+      <p style="color:#6b6b6b; font-size:13px; margin-top:24px;">— YugenBD order notification</p>
+    </div>`;
+
+  await send({ to, subject, text, html, kind: `order #${shortId} notification` });
 }

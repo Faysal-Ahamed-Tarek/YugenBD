@@ -118,4 +118,16 @@ export const reviewRepository = {
       .returning()
       .then((rows) => rows[0] ?? null);
   },
+
+  /**
+   * Permanently delete a review. Its review_images rows go with it via the
+   * ON DELETE CASCADE FK. Returns the deleted id, or null when not found.
+   */
+  deleteById(id: string) {
+    return db
+      .delete(reviews)
+      .where(eq(reviews.id, id))
+      .returning({ id: reviews.id })
+      .then((rows) => rows[0] ?? null);
+  },
 };

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/returns" },
 };
 
-const WHATSAPP = "https://wa.me/8801924415506";
+const WHATSAPP = "https://wa.me/8801778931591";
 
 /** Bangla helper — a subtle secondary line under English content. */
 function Bn({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -31,7 +31,7 @@ export default function ReturnsPage() {
   return (
     <div>
       <PageHero
-        eyebrow="Customer Care · কাস্টমার কেয়ার"
+        showMark={false}
         title="Return & Refund Policy"
         subtitle="ফেরত ও রিফান্ড নীতিমালা"
       />

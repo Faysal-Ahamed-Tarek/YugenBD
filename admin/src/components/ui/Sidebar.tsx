@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { api } from "@/lib/api";
+import type { OrderCounts } from "@/lib/types";
 
 interface NavChild {
   label: string;
@@ -36,9 +38,33 @@ const NAV: NavItem[] = [
   { label: "Settings", href: "/settings", icon: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.4 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4L2.6 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1L9.5 21h5l.4-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1z" },
 ];
 
+/** How often the sidebar re-checks for new pending orders. */
+const PENDING_POLL_MS = 30_000;
+
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+
+  // Pending-order count badge on the Orders item — the sidebar is mounted on
+  // every admin page, so a new order surfaces wherever the admin happens to be.
+  const [pending, setPending] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await api.get<OrderCounts>("/orders/counts");
+        if (!cancelled) setPending(res.data.pending);
+      } catch {
+        /* badge is informational — keep the last known value */
+      }
+    };
+    load();
+    const timer = setInterval(load, PENDING_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
@@ -123,6 +149,14 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 >
                   {icon(item.icon)}
                   {item.label}
+                  {item.href === "/orders" && pending > 0 && (
+                    <span
+                      title={`${pending} pending order${pending > 1 ? "s" : ""}`}
+                      className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white"
+                    >
+                      {pending > 99 ? "99+" : pending}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

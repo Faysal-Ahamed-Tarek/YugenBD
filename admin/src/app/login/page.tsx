@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function LoginPage() {
   const { login, status } = useAuth();
@@ -35,11 +37,16 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-surface px-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-background p-6 sm:p-8">
         <div className="mb-6 text-center">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary text-lg font-bold text-white">
-            Y
-          </span>
-          <h1 className="mt-3 text-xl font-semibold">YugenBD Admin</h1>
-          <p className="mt-1 text-sm text-muted">Sign in to manage the store</p>
+          {/* The logo IS the heading here — no "YugenBD Admin" wordmark. */}
+          <Image
+            src="/logo.png"
+            alt="YugenBD"
+            width={843}
+            height={560}
+            priority
+            className="mx-auto h-14 w-auto"
+          />
+          <p className="mt-3 text-sm text-muted">Sign in to manage the store</p>
         </div>
 
         <form onSubmit={submit} className="space-y-4">
@@ -61,9 +68,8 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-sm font-medium mb-1.5">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

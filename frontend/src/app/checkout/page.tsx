@@ -72,15 +72,22 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load cart; bounce back to /cart if it's empty.
+  // Load cart and KEEP IT IN SYNC — the header cart sidebar can change
+  // quantities/remove lines while checkout is open, and the summary, subtotal
+  // and free-delivery state must follow. Bounce back to /cart once it's empty.
   useEffect(() => {
-    const cart = getCart();
-    if (cart.length === 0) {
-      router.replace("/cart");
-      return;
-    }
-    setItems(cart);
-    setReady(true);
+    const sync = () => {
+      const cart = getCart();
+      if (cart.length === 0) {
+        router.replace("/cart");
+        return;
+      }
+      setItems(cart);
+      setReady(true);
+    };
+    sync();
+    window.addEventListener("cart:updated", sync);
+    return () => window.removeEventListener("cart:updated", sync);
   }, [router]);
 
   // Load divisions for the address selector.
@@ -89,15 +96,20 @@ export default function CheckoutPage() {
   }, []);
 
   // Fetch stock for the summary's pre-order split (same pattern as /cart).
+  // Re-runs when the set of products changes so a line added from the sidebar
+  // gets its stock too (quantity-only edits don't need a refetch).
+  const productKey = items.map((i) => i.productId).sort().join(",");
   useEffect(() => {
     let cancelled = false;
-    fetchCartStock(getCart()).then((map) => {
+    const cart = getCart();
+    if (cart.length === 0) return;
+    fetchCartStock(cart).then((map) => {
       if (!cancelled) setStock(map);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [productKey]);
 
   // Signed-in customers: prefill the form from their saved shipping address
   // (falling back to account name/phone). Everything stays editable — we only

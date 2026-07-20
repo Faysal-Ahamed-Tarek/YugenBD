@@ -59,8 +59,8 @@ export default function Footer() {
         </div>
 
         {/* Extra bottom padding on mobile keeps content clear of the fixed bottom nav */}
-        <div className="mt-10 border-t border-border pt-5 pb-16 md:pb-0 text-center text-xs text-muted">
-          © {new Date().getFullYear()} YugenBD. All rights reserved. Cash on delivery nationwide.
+        <div className="mt-10 border-t border-border pt-5 pb-16 md:pb-0 text-center text-sm text-muted">
+          © {new Date().getFullYear()} YugenBD. All rights reserved.
         </div>
       </div>
       <BackToTop />
