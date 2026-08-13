@@ -144,6 +144,10 @@ function sortColumn(sort: ListProductsQuery["sort"]) {
       return asc(products.basePrice);
     case "price_desc":
       return desc(products.basePrice);
+    case "stock_asc":
+      return asc(products.stock);
+    case "stock_desc":
+      return desc(products.stock);
     case "title_asc":
       return asc(products.title);
     case "newest":

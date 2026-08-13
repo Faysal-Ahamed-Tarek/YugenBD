@@ -223,6 +223,14 @@ export function streamOrderPdf(order: Order, stream: NodeJS.WritableStream) {
 
   y = Math.max(leftEnd, rightEnd) + 26;
 
+  // ---- Customer note (only when present) ----
+  if (order.note) {
+    doc.fillColor(INK).fontSize(11).font(BOLD).text("Note from customer", LEFT, y);
+    doc.moveDown(0.3);
+    doc.fontSize(10).font(BODY).fillColor(INK).text(order.note, LEFT, doc.y, { width: CONTENT_WIDTH });
+    y = doc.y + 16;
+  }
+
   // ---- Items ----
   doc.fillColor(INK).fontSize(13).font(BOLD).text("Items", LEFT, y);
   drawItemsTable(doc, order, doc.y + 8);

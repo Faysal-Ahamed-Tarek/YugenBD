@@ -182,6 +182,7 @@ export interface OrderNotification {
   fullName: string;
   phone: string;
   address: string;
+  note?: string | null;
   deliveryZone: "inside_dhaka" | "outside_dhaka";
   deliveryFee: string;
   subtotal: string;
@@ -221,6 +222,7 @@ export async function sendNewOrderEmail(order: OrderNotification): Promise<void>
     `Address:  ${order.address}`,
     `Delivery: ${zone} (${taka(order.deliveryFee)})`,
     `Payment:  ${payment}`,
+    ...(order.note ? ["", `Note:     ${order.note}`] : []),
     "",
     "Items:",
     ...lines,
@@ -255,6 +257,7 @@ export async function sendNewOrderEmail(order: OrderNotification): Promise<void>
         <tr><td style="color:#6b6b6b;">Phone</td><td>${order.phone}</td></tr>
         <tr><td style="color:#6b6b6b; vertical-align:top;">Address</td><td>${order.address}</td></tr>
         <tr><td style="color:#6b6b6b;">Delivery</td><td>${zone}</td></tr>
+        ${order.note ? `<tr><td style="color:#6b6b6b; vertical-align:top;">Note</td><td>${order.note}</td></tr>` : ""}
       </table>
 
       <table style="width:100%; font-size:14px; border-collapse:collapse; margin-top:20px;">

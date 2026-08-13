@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductBySlug, getProducts, formatPrice } from "@/lib/api";
+import { getProductBySlug, getProducts, getShipmentDate, formatPrice } from "@/lib/api";
 import type { ProductDetail } from "@/types";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import ProductGallery from "@/components/product/ProductGallery";
@@ -89,9 +89,12 @@ export default async function ProductPage({ params }: PageProps) {
   // Post-review sections: "Recommended for you" pulls best sellers; "Related
   // products" pulls the product's primary category. Both exclude the product
   // being viewed. Fetched in parallel; each renders nothing when empty.
-  const [bestSellers, sameCategory] = await Promise.all([
+  // The admin-set shipment date is only needed for the pre-order notice
+  // (0 stock), so it's skipped otherwise.
+  const [bestSellers, sameCategory, shipment] = await Promise.all([
     getProducts({ categorySlug: "best-seller", limit: 9 }),
     primaryCategory ? getProducts({ categorySlug: primaryCategory.slug, limit: 9 }) : Promise.resolve([]),
+    product.stock === 0 ? getShipmentDate() : Promise.resolve(null),
   ]);
   const recommended = bestSellers.filter((p) => p.id !== product.id);
   const related = sameCategory.filter((p) => p.id !== product.id);
@@ -179,7 +182,7 @@ export default async function ProductPage({ params }: PageProps) {
           )}
 
           <div className="mt-6">
-            <ProductActions product={product} />
+            <ProductActions product={product} shipmentDate={shipment?.expectedDate ?? null} />
           </div>
 
           {/* Detail sections */}

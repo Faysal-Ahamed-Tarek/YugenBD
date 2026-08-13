@@ -2,15 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
+export interface SortState {
+  key: string;
+  direction: "asc" | "desc";
+}
+
 export interface Column<T> {
   header: string;
   cell: (row: T) => ReactNode;
   className?: string;
+  /** When set, the header becomes a clickable sort toggle (see `activeSort`/`onSortChange`). */
+  sortKey?: string;
 }
 
 export interface FetchResult<T> {
   rows: T[];
   hasMore: boolean;
+  /** Total matching rows across all pages, when the backend reports one — drives the count line above the table. */
+  total?: number;
 }
 
 /**
@@ -27,7 +36,12 @@ export default function AdminTable<T>({
   onDelete,
   onRowClick,
   searchPlaceholder = "Search…",
+  itemLabel = "results",
   reloadKey = 0,
+  toolbarExtra,
+  filterSummary,
+  activeSort,
+  onSortChange,
 }: {
   columns: Column<T>[];
   fetchPage: (params: { q: string; page: number }) => Promise<FetchResult<T>>;
@@ -37,12 +51,23 @@ export default function AdminTable<T>({
   /** When set, the whole row becomes clickable (e.g. navigate to a detail page). */
   onRowClick?: (row: T) => void;
   searchPlaceholder?: string;
+  /** Noun used in the "N {itemLabel}" count line above the table (only shown when fetchPage returns `total`). */
+  itemLabel?: string;
   reloadKey?: number;
+  /** Rendered in the same row as the search box (e.g. a "Filters" button), opposite the search input. */
+  toolbarExtra?: ReactNode;
+  /** Rendered on the same line as the "N {itemLabel}" count (e.g. active filter chips + a clear link). */
+  filterSummary?: ReactNode;
+  /** Current sort column/direction — drives the arrow shown on the matching `sortKey` header. */
+  activeSort?: SortState | null;
+  /** Called with a column's `sortKey` when its header is clicked. */
+  onSortChange?: (key: string) => void;
 }) {
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<T[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,11 +81,13 @@ export default function AdminTable<T>({
         const result = await fetchPage({ q: query, page: 1 });
         setRows(result.rows);
         setHasMore(result.hasMore);
+        setTotal(result.total ?? null);
         setPage(1);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load");
         setRows([]);
         setHasMore(false);
+        setTotal(null);
       } finally {
         setLoading(false);
       }
@@ -85,6 +112,7 @@ export default function AdminTable<T>({
       const result = await fetchPage({ q, page: next });
       setRows((prev) => [...prev, ...result.rows]);
       setHasMore(result.hasMore);
+      setTotal(result.total ?? null);
       setPage(next);
     } catch {
       /* keep existing rows on failure */
@@ -97,15 +125,27 @@ export default function AdminTable<T>({
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <input
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={searchPlaceholder}
-          className="w-full max-w-sm h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition"
+          className="w-full sm:flex-1 max-w-xl h-10 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition"
         />
+        {toolbarExtra}
       </div>
+
+      {(filterSummary || (total !== null && !loading)) && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-muted">
+          {total !== null && !loading && (
+            <span>
+              {total} {itemLabel}
+            </span>
+          )}
+          {filterSummary}
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border border-border bg-background">
         <table className="w-full text-sm">
@@ -113,7 +153,18 @@ export default function AdminTable<T>({
             <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
               {columns.map((col) => (
                 <th key={col.header} className={`px-4 py-3 font-semibold ${col.className ?? ""}`}>
-                  {col.header}
+                  {col.sortKey ? (
+                    <button
+                      type="button"
+                      onClick={() => onSortChange?.(col.sortKey!)}
+                      className="inline-flex cursor-pointer items-center gap-1 hover:text-primary transition-colors"
+                    >
+                      {col.header}
+                      <SortIcon direction={activeSort?.key === col.sortKey ? activeSort.direction : null} />
+                    </button>
+                  ) : (
+                    col.header
+                  )}
                 </th>
               ))}
               {hasActions && <th className="px-4 py-3 text-right font-semibold">Actions</th>}
@@ -205,5 +256,23 @@ export default function AdminTable<T>({
         </div>
       )}
     </div>
+  );
+}
+
+/** Up/down chevrons for a sortable header; the active direction is filled in, the other stays faint. */
+function SortIcon({ direction }: { direction: "asc" | "desc" | null }) {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="none" aria-hidden="true" className="shrink-0">
+      <path
+        d="M5 0L9 5H1L5 0Z"
+        fill="currentColor"
+        opacity={direction === "asc" ? 1 : 0.3}
+      />
+      <path
+        d="M5 14L1 9H9L5 14Z"
+        fill="currentColor"
+        opacity={direction === "desc" ? 1 : 0.3}
+      />
+    </svg>
   );
 }

@@ -1,6 +1,7 @@
 import { ApiError } from "../../utils/ApiError";
 import { sendNewOrderEmail } from "../../config/mailer";
 import { locationRepository } from "../locations/location.repository";
+import { deliveryService } from "../delivery/delivery.service";
 import { orderRepository } from "./order.repository";
 import type { CreateOrderInput, CreateManualOrderInput, ListOrdersQuery, OrderStatus } from "./order.validators";
 
@@ -16,10 +17,11 @@ const DELIVERY = {
 } as const;
 
 /**
- * Orders whose subtotal reaches this amount (BDT) ship free, regardless of
- * delivery zone. Authoritative on the server — the storefront only mirrors it.
+ * Free delivery is admin-configurable (delivery module): orders whose subtotal
+ * reaches the saved threshold ship free regardless of zone, and an "always
+ * free" toggle waives the fee outright. Authoritative on the server — the
+ * storefront only mirrors these values for display.
  */
-export const FREE_DELIVERY_THRESHOLD = 3000;
 
 function money(value: number) {
   return value.toFixed(2);
@@ -68,7 +70,12 @@ async function resolveManualAddress(input: Omit<CreateManualOrderInput, "status"
  * (5 regular + 5 pre-order) and only the covered 5 are decremented.
  */
 async function buildAndInsertOrder(
-  input: Omit<CreateManualOrderInput, "status" | "address"> & { address: string },
+  // `freeDelivery` only ever arrives on manual orders — customer checkout never
+  // sets it, so it stays optional here.
+  input: Omit<CreateManualOrderInput, "status" | "address" | "freeDelivery"> & {
+    address: string;
+    freeDelivery?: boolean;
+  },
   status: OrderStatus = "pending",
   userId: string | null = null
 ) {
@@ -117,8 +124,11 @@ async function buildAndInsertOrder(
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
   const { fee: zoneFee, estimate } = DELIVERY[input.deliveryZone];
-  // Free delivery once the subtotal reaches the threshold.
-  const fee = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : zoneFee;
+  // Free delivery when the admin waived it on this order (manual orders only),
+  // toggled it on outright, or once the subtotal reaches the admin-set threshold.
+  const { freeDeliveryThreshold, alwaysFree } = await deliveryService.resolve();
+  const fee =
+    input.freeDelivery || alwaysFree || subtotal >= freeDeliveryThreshold ? 0 : zoneFee;
   const total = subtotal + fee;
 
   const isBkash = input.paymentMethod === "bkash";
@@ -138,6 +148,7 @@ async function buildAndInsertOrder(
       fullName: input.fullName,
       phone: input.phone,
       address: input.address,
+      note: input.note?.trim() || null,
       deliveryZone: input.deliveryZone,
       deliveryFee: money(fee),
       deliveryEstimate: estimate,

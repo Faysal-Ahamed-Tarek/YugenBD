@@ -13,6 +13,7 @@ import type {
   HeroSlide,
   FaqItem,
   Announcement,
+  ShipmentDate,
 } from "@/types";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000/api/v1";
@@ -62,6 +63,12 @@ export async function getFaqs(): Promise<FaqItem[]> {
 
 export async function getAnnouncements(): Promise<Announcement[]> {
   return (await apiGet<Announcement[]>("/announcements")) ?? [];
+}
+
+/** The admin-set next shipment date, or null if never configured — the
+ *  ship-by date on pre-order product pages falls back to +15 days then. */
+export async function getShipmentDate(): Promise<ShipmentDate | null> {
+  return apiGet<ShipmentDate>("/shipment");
 }
 
 export async function getProducts(params: ProductListParams = {}): Promise<Product[]> {

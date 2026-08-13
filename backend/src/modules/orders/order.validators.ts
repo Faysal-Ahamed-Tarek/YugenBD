@@ -15,6 +15,9 @@ export const createOrderSchema = z
     fullName: z.string().trim().min(2, "Name is too short").max(150),
     phone: z.string().trim().regex(bdLocalPhone, "Enter a valid Bangladeshi phone (01XXXXXXXXX)"),
     address: z.string().trim().min(5, "Please enter a full delivery address").max(1000),
+    // Optional free-text note from the customer (delivery instructions, gift
+    // message, etc). Never required.
+    note: z.string().trim().max(1000, "Note is too long").optional(),
     deliveryZone: z.enum(["inside_dhaka", "outside_dhaka"]),
     // Payment: COD by default; bKash requires a manual Send Money reference
     // (transaction id + amount the customer typed). No gateway involved.
@@ -55,7 +58,12 @@ export const createManualOrderSchema = z
     districtId: z.string().uuid("Select a district").optional(),
     upazilaId: z.string().uuid("Select an upazila / thana").optional(),
     area: z.string().trim().min(3, "Enter the area / street address").max(255).optional(),
+    note: z.string().trim().max(1000, "Note is too long").optional(),
     deliveryZone: z.enum(["inside_dhaka", "outside_dhaka"]),
+    // Admin-only per-order waiver: ship this one order free regardless of zone
+    // or the global free-delivery settings. The zone is still required — it
+    // drives the delivery estimate shown to the customer.
+    freeDelivery: z.boolean().optional().default(false),
     paymentMethod: z.enum(["bkash", "cod"]).default("cod"),
     bkashTransactionId: z.string().trim().min(4).max(50).optional(),
     bkashAmount: z.number().positive().optional(),

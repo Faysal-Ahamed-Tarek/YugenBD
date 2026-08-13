@@ -4,7 +4,8 @@ import type { Announcement } from "@/types";
  * Scrolling announcement bar shown under the hero. The messages render twice
  * (one visible group + one aria-hidden duplicate) inside a track that animates
  * by -50%, so the loop is seamless and infinite. Duration scales with the
- * number of messages so more text doesn't scroll uncomfortably fast.
+ * number of messages so more text doesn't scroll uncomfortably fast — the
+ * per-message figure is deliberately generous to keep the pace readable.
  *
  * The keyframes live in a co-located <style> tag rather than globals.css: the
  * Tailwind v4 / Turbopack CSS pipeline strips hand-written @keyframes from the
@@ -13,7 +14,7 @@ import type { Announcement } from "@/types";
 export default function AnnouncementMarquee({ items }: { items: Announcement[] }) {
   if (items.length === 0) return null;
 
-  const duration = `${Math.max(18, items.length * 12)}s`;
+  const duration = `${Math.max(36, items.length * 24)}s`;
 
   const group = (ariaHidden: boolean) => (
     <div className="ymq-group" aria-hidden={ariaHidden || undefined}>

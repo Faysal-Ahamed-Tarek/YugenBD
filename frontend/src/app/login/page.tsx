@@ -89,7 +89,7 @@ export default function LoginPage() {
           />
         </div>
         {error && (
-          <div className="rounded-lg bg-primary-light px-3 py-2 text-base text-primary">
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-base text-red-600">
             <p>{error}</p>
             {needsVerification &&
               (resent ? (

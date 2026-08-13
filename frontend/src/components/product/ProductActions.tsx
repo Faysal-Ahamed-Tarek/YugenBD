@@ -15,7 +15,14 @@ const WHATSAPP_NUMBER = "8801924415506";
  * Zero available stock does NOT disable ordering — it becomes a PRE-ORDER: the
  * button stays enabled with a "Pre-Order" label and an out-of-stock note.
  */
-export default function ProductActions({ product }: { product: ProductDetail }) {
+export default function ProductActions({
+  product,
+  shipmentDate,
+}: {
+  product: ProductDetail;
+  /** Admin-set next shipment date (YYYY-MM-DD, from GET /shipment), or null if never configured. */
+  shipmentDate?: string | null;
+}) {
   const [quantity, setQuantity] = useState(1);
   const router = useRouter();
 
@@ -34,12 +41,25 @@ export default function ProductActions({ product }: { product: ProductDetail }) 
     setQuantity((q) => Math.min(Math.max(1, q + delta), maxQty));
   };
 
-  // Expected ship date shown for pre-orders: 15 days from today.
-  const restockDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  // Expected ship date shown for pre-orders: the admin-set shipment date
+  // (GET /shipment) when configured, otherwise a 15-days-from-today guess.
+  // shipmentDate is a plain YYYY-MM-DD (no time/timezone) — parsed as local
+  // calendar date components so it always displays the date the admin picked.
+  const restockDate = (() => {
+    if (shipmentDate) {
+      const [year, month, day] = shipmentDate.split("-").map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
+    return new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  })();
 
   const orderNow = () => {
     addToCart(

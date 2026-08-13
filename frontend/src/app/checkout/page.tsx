@@ -43,14 +43,20 @@ const DELIVERY_OPTIONS: {
   { zone: "outside_dhaka", label: "Outside Dhaka", fee: 120, estimate: "Delivery in 2-3 days" },
 ];
 
-/** Subtotal (BDT) at or above which delivery is free. Mirrors the server. */
-const FREE_DELIVERY_THRESHOLD = 3000;
+/**
+ * Free-delivery rules are admin-configurable (GET /delivery) — these are only
+ * the fallbacks used until that request resolves. The server recomputes the
+ * authoritative fee when the order is placed either way.
+ */
+const DEFAULT_FREE_DELIVERY_THRESHOLD = 3000;
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(DEFAULT_FREE_DELIVERY_THRESHOLD);
+  const [alwaysFreeDelivery, setAlwaysFreeDelivery] = useState(false);
   // Stock per product — used only to mirror the cart's in-stock / pre-order
   // row split in the order summary (the backend splits authoritatively).
   const [stock, setStock] = useState<Record<string, number>>({});
@@ -64,6 +70,7 @@ export default function CheckoutPage() {
   const [districtId, setDistrictId] = useState("");
   const [upazilaId, setUpazilaId] = useState("");
   const [area, setArea] = useState("");
+  const [note, setNote] = useState("");
   const [zone, setZone] = useState<DeliveryZone | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
   const [bkashTxn, setBkashTxn] = useState("");
@@ -93,6 +100,21 @@ export default function CheckoutPage() {
   // Load divisions for the address selector.
   useEffect(() => {
     fetchLocations("/locations/divisions").then(setDivisions);
+  }, []);
+
+  // Admin-set free-delivery rules. On failure the defaults above stay in place;
+  // the server still prices the order authoritatively.
+  useEffect(() => {
+    fetch(`${API_URL}/delivery`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json: { data?: { freeDeliveryThreshold: number; alwaysFree: boolean } } | null) => {
+        if (!json?.data) return;
+        setFreeDeliveryThreshold(json.data.freeDeliveryThreshold);
+        setAlwaysFreeDelivery(json.data.alwaysFree);
+      })
+      .catch(() => {
+        /* keep the defaults — checkout still works */
+      });
   }, []);
 
   // Fetch stock for the summary's pre-order split (same pattern as /cart).
@@ -182,7 +204,7 @@ export default function CheckoutPage() {
   // Free delivery unlocks at the threshold — the priced zone options are hidden
   // and the zone is derived from the chosen division (Dhaka → inside Dhaka) so
   // the order still records an accurate zone + estimate for logistics.
-  const freeDelivery = subtotal >= FREE_DELIVERY_THRESHOLD;
+  const freeDelivery = alwaysFreeDelivery || subtotal >= freeDeliveryThreshold;
   const derivedZone: DeliveryZone = divisionName === "Dhaka" ? "inside_dhaka" : "outside_dhaka";
   const effectiveZone: DeliveryZone | null = freeDelivery ? derivedZone : zone;
   const deliveryFee = freeDelivery ? 0 : selected?.fee ?? null;
@@ -231,6 +253,7 @@ export default function CheckoutPage() {
         fullName: fullName.trim(),
         phone: phone.trim(),
         address: composedAddress,
+        ...(note.trim() ? { note: note.trim() } : {}),
         deliveryZone: effectiveZone,
         paymentMethod,
         ...(paymentMethod === "bkash"
@@ -346,6 +369,21 @@ export default function CheckoutPage() {
                 {touched.address && errors.address && (
                   <p className="mt-1 text-xs text-primary">{errors.address}</p>
                 )}
+              </div>
+
+              <div>
+                <label htmlFor="note" className="block text-sm font-medium mb-1.5">
+                  Order Notes <span className="font-normal text-muted">(optional)</span>
+                </label>
+                <textarea
+                  id="note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  maxLength={1000}
+                  rows={3}
+                  placeholder="Delivery instructions, gift message, etc."
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition resize-none"
+                />
               </div>
             </div>
           </section>

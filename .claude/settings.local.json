@@ -287,7 +287,15 @@
       "Bash(curl -sSL -o Jost-SemiBold.ttf \"https://fonts.gstatic.com/s/jost/v20/92zPtBhPNqw79Ij1E865zBUv7mx9IjVBNI0umfHK.ttf\" -w \"semibold %{http_code} %{size_download}b\\\\n\")",
       "Bash(grep -v \"^$\")",
       "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' localhost:4000/api/v1/products?limit=3)",
-      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'localhost:4000/api/v1/products?q=Arumik&limit=3')"
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' 'localhost:4000/api/v1/products?q=Arumik&limit=3')",
+      "Bash(curl -s -o /dev/null -w \"admin: %{http_code}\\\\n\" http://localhost:3001)",
+      "Bash(curl -s http://localhost:4000/api/v1/shipment)",
+      "Bash(curl -s \"http://localhost:4000/api/v1/products?limit=1&status=published\")",
+      "Bash(node -e \"console.log\\(new Date\\(Date.now\\(\\)+15*24*60*60*1000\\).toLocaleDateString\\('en-GB',{day:'numeric',month:'long',year:'numeric'}\\)\\)\")",
+      "Bash(curl -s http://localhost:3000/product/sana-nameraka-honpo-foam-face-wash-200ml)",
+      "Bash(grep -o \"ship it by.\\\\{0,80\\\\}\")",
+      "Bash(curl -s http://localhost:3000/ -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:4000/api/v1/delivery)"
     ]
   }
 }

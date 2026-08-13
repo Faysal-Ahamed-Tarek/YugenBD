@@ -81,7 +81,9 @@ export const listProductsQuerySchema = z.object({
   q: z.string().trim().optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
-  sort: z.enum(["newest", "price_asc", "price_desc", "title_asc"]).default("newest"),
+  sort: z
+    .enum(["newest", "price_asc", "price_desc", "title_asc", "stock_asc", "stock_desc"])
+    .default("newest"),
 });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;

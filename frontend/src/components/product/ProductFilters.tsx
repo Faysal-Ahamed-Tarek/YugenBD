@@ -139,12 +139,25 @@ export default function ProductFilters({
       <FilterGroup label="Category">
         <RadioRow label="All categories" checked={!current.category} onSelect={() => select({ category: undefined })} />
         {categories.map((cat) => (
-          <RadioRow
-            key={cat.id}
-            label={cat.name}
-            checked={current.category === cat.slug}
-            onSelect={() => select({ category: cat.slug })}
-          />
+          <div key={cat.id}>
+            <RadioRow
+              label={cat.name}
+              checked={current.category === cat.slug}
+              onSelect={() => select({ category: cat.slug })}
+            />
+            {cat.children && cat.children.length > 0 && (
+              <div className="ml-4 mt-1 space-y-1.5 border-l border-border pl-3">
+                {cat.children.map((sub) => (
+                  <RadioRow
+                    key={sub.id}
+                    label={sub.name}
+                    checked={current.category === sub.slug}
+                    onSelect={() => select({ category: sub.slug })}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </FilterGroup>
 

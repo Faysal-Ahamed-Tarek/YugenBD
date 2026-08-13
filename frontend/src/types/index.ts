@@ -175,6 +175,7 @@ export interface Order {
   fullName: string;
   phone: string;
   address: string;
+  note: string | null;
   deliveryZone: DeliveryZone;
   deliveryFee: string;
   deliveryEstimate: string;
@@ -194,6 +195,7 @@ export interface CreateOrderPayload {
   fullName: string;
   phone: string;
   address: string;
+  note?: string;
   deliveryZone: DeliveryZone;
   paymentMethod: PaymentMethod;
   bkashTransactionId?: string;
@@ -206,6 +208,13 @@ export interface Announcement {
   id: string;
   text: string;
   sortOrder: number;
+}
+
+/** GET /shipment — the admin-set "next shipment arrival" date shown on pre-order products. */
+export interface ShipmentDate {
+  id: string;
+  expectedDate: string;
+  updatedAt: string;
 }
 
 export type FaqSegment = "products" | "orders" | "delivery" | "returns";

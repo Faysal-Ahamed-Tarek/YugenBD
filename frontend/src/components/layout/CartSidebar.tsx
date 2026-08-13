@@ -112,13 +112,6 @@ export default function CartSidebar({ open, onClose }: { open: boolean; onClose:
         {items.length === 0 ? (
           /* Empty state */
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-surface text-muted">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="9" cy="20" r="1.6" />
-                <circle cx="17" cy="20" r="1.6" />
-                <path d="M3 4h2l2.6 12h10.2L20 8H6" />
-              </svg>
-            </span>
             <div>
               <p className="text-base font-semibold">Your cart is empty</p>
               <p className="mt-1 text-sm text-muted">Looks like you haven&apos;t added anything yet.</p>

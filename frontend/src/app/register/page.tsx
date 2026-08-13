@@ -112,13 +112,7 @@ export default function RegisterPage() {
   if (registered) {
     return (
       <div className="mx-auto max-w-md px-4 py-10 md:py-16 text-center">
-        <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-700">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M4 6h16v12H4z" />
-            <path d="M4 7l8 6 8-6" />
-          </svg>
-        </span>
-        <h1 className="mt-4 text-2xl font-semibold">Confirm your email</h1>
+        <h1 className="text-2xl font-semibold">Confirm your email</h1>
         <p className="mt-2 text-base text-muted">
           We&apos;ve sent a verification link to{" "}
           <strong className="text-foreground">{email.trim()}</strong>. Click it to activate your

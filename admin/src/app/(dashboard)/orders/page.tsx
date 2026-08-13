@@ -62,7 +62,26 @@ export default function OrdersPage() {
       header: "Customer",
       cell: (o) => (
         <div>
-          <p className="font-medium">{o.fullName}</p>
+          <p className="font-medium flex items-center gap-1.5">
+            {o.fullName}
+            {o.note && (
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0 text-amber-600"
+                aria-hidden="true"
+              >
+                <title>Has a customer note</title>
+                <path d="M4 4h16v12H8l-4 4V4z" />
+              </svg>
+            )}
+          </p>
           <p className="text-xs text-muted">{o.phone}</p>
         </div>
       ),

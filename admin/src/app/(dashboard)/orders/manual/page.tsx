@@ -37,6 +37,8 @@ export default function ManualOrderPage() {
   const [phone, setPhone] = useState("");
   const [area, setArea] = useState("");
   const [zone, setZone] = useState<"inside_dhaka" | "outside_dhaka" | null>(null);
+  // Per-order delivery-fee waiver — the backend honours this regardless of zone.
+  const [freeDelivery, setFreeDelivery] = useState(false);
   const [status, setStatus] = useState<OrderStatus>("confirmed");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -105,7 +107,8 @@ export default function ManualOrderPage() {
   const linePrice = (l: Line) => parseFloat(l.product.discountPrice ?? l.product.basePrice);
   const subtotal = useMemo(() => lines.reduce((s, l) => s + linePrice(l) * l.quantity, 0), [lines]);
   const selectedZone = ZONES.find((z) => z.zone === zone);
-  const total = selectedZone ? subtotal + selectedZone.fee : null;
+  const deliveryFee = freeDelivery ? 0 : selectedZone?.fee ?? null;
+  const total = deliveryFee !== null ? subtotal + deliveryFee : null;
 
   const phoneValid = BD_PHONE.test(phone.trim());
   const locationValid = Boolean(divisionId && districtId && upazilaId && area.trim().length >= 3);
@@ -125,6 +128,7 @@ export default function ManualOrderPage() {
         upazilaId,
         area: area.trim(),
         deliveryZone: zone,
+        freeDelivery,
         status,
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
       });
@@ -297,6 +301,17 @@ export default function ManualOrderPage() {
                 </button>
               ))}
             </div>
+            {/* Zone stays selected (it sets the delivery estimate); this only
+                waives the fee for this one order. */}
+            <label className="mt-2 flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={freeDelivery}
+                onChange={(e) => setFreeDelivery(e.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              Free delivery {selectedZone && !freeDelivery ? `(waive ৳${selectedZone.fee})` : "(৳0 delivery fee)"}
+            </label>
           </div>
 
           <div>
@@ -324,6 +339,12 @@ export default function ManualOrderPage() {
         <div className="text-sm">
           <p className="text-muted">
             Subtotal: <span className="font-semibold text-foreground">{formatPrice(subtotal)}</span>
+          </p>
+          <p className="text-muted">
+            Delivery:{" "}
+            <span className="font-semibold text-foreground">
+              {deliveryFee === null ? "—" : deliveryFee === 0 ? "Free" : formatPrice(deliveryFee)}
+            </span>
           </p>
           <p className="text-muted">
             Total:{" "}

@@ -10,4 +10,6 @@ export * from "./faq";
 export * from "./announcements";
 export * from "./orders";
 export * from "./hero-slides";
+export * from "./shipment";
+export * from "./delivery";
 export * from "./relations";

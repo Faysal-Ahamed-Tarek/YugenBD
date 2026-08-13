@@ -104,6 +104,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             {ZONE_LABEL[order.deliveryZone] ?? order.deliveryZone} · {formatPrice(order.deliveryFee)} ·{" "}
             {order.deliveryEstimate}
           </p>
+          {order.note && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                Note from customer
+              </p>
+              <p className="mt-1 text-sm text-amber-900 whitespace-pre-wrap">{order.note}</p>
+            </div>
+          )}
         </section>
 
         {/* Status + payment */}

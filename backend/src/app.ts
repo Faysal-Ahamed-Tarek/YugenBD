@@ -20,6 +20,8 @@ import announcementRoutes from "./modules/announcements/announcement.routes";
 import locationRoutes from "./modules/locations/location.routes";
 import addressRoutes from "./modules/addresses/address.routes";
 import adminUserRoutes from "./modules/users/user.routes";
+import shipmentRoutes from "./modules/shipment/shipment.routes";
+import deliveryRoutes from "./modules/delivery/delivery.routes";
 
 const app = express();
 
@@ -59,6 +61,8 @@ app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin/dashboard", dashboardRoutes);
 app.use("/api/v1/admin/users", adminUserRoutes);
+app.use("/api/v1/shipment", shipmentRoutes);
+app.use("/api/v1/delivery", deliveryRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

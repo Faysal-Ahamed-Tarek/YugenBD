@@ -72,6 +72,19 @@ export interface Concern {
   createdAt: string;
 }
 
+/** Admin-configurable free-delivery rules — GET/PUT /delivery. */
+export interface DeliverySettings {
+  freeDeliveryThreshold: number;
+  alwaysFree: boolean;
+}
+
+/** The admin-set "next shipment arrival" date shown on pre-order product pages. */
+export interface ShipmentDate {
+  id: string;
+  expectedDate: string;
+  updatedAt: string;
+}
+
 export interface ProductImage {
   id: string;
   productId: string;
@@ -125,6 +138,7 @@ export interface Order {
   fullName: string;
   phone: string;
   address: string;
+  note: string | null;
   deliveryZone: "inside_dhaka" | "outside_dhaka";
   deliveryFee: string;
   deliveryEstimate: string;

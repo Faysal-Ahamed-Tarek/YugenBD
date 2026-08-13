@@ -11,6 +11,10 @@ export const orders = pgTable(
     fullName: varchar("full_name", { length: 150 }).notNull(),
     phone: varchar("phone", { length: 20 }).notNull(),
     address: text("address").notNull(),
+    // Optional free-text note from the customer at checkout (delivery
+    // instructions, gift message, etc). Never required; shown to admins on
+    // the order detail view and the PDF invoice.
+    note: text("note"),
     deliveryZone: deliveryZoneEnum("delivery_zone").notNull(),
     deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 }).notNull(),
     deliveryEstimate: text("delivery_estimate").notNull(),
