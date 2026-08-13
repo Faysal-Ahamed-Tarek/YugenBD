@@ -28,6 +28,12 @@ export const products = pgTable(
     ingredients: text("ingredients"),
     usageInstructions: text("usage_instructions"),
     additionInformation: text("addition_information"),
+    // Optional admin-curated placements. NULL = unordered: the product still
+    // lists, but after every product that carries a number (ascending), falling
+    // back to newest-first. `categoryOrder` drives category pages,
+    // `shopOrder` the shop / all-products listing.
+    categoryOrder: integer("category_order"),
+    shopOrder: integer("shop_order"),
     status: productStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

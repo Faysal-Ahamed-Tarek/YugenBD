@@ -44,8 +44,11 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     : undefined;
   const effectiveSlug = activeChild ? activeChild.slug : slug;
 
+  // Admin-curated order for category pages; unpositioned products follow,
+  // newest first.
   const { products, pagination } = await getProductsPage({
     categorySlug: effectiveSlug,
+    sort: "category_order",
     limit: PAGE_SIZE,
     page: 1,
   });
@@ -93,7 +96,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         <div className="mt-6">
           <ProductGrid products={products} />
           <LoadMoreProducts
-            params={{ categorySlug: effectiveSlug, limit: PAGE_SIZE }}
+            params={{ categorySlug: effectiveSlug, sort: "category_order", limit: PAGE_SIZE }}
             initialHasMore={pagination.hasMore}
           />
         </div>

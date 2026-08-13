@@ -20,6 +20,10 @@ export const createProductSchema = z
     usageInstructions: z.string().optional(),
     additionInformation: z.string().optional(),
     status: z.enum(["draft", "published"]).default("draft"),
+    // Optional curated placements — leave them out (or send null) to let the
+    // product fall back to newest-first.
+    categoryOrder: z.number().int().min(0).nullable().optional(),
+    shopOrder: z.number().int().min(0).nullable().optional(),
     categoryIds: z.array(z.string().uuid()).min(1, "At least one category is required"),
     concernIds: z.array(z.string().uuid()).optional().default([]),
     images: z.array(imageInputSchema).optional().default([]),
@@ -41,6 +45,8 @@ export const updateProductSchema = z
     usageInstructions: z.string().optional(),
     additionInformation: z.string().optional(),
     status: z.enum(["draft", "published"]).optional(),
+    categoryOrder: z.number().int().min(0).nullable().optional(),
+    shopOrder: z.number().int().min(0).nullable().optional(),
     categoryIds: z.array(z.string().uuid()).min(1).optional(),
     concernIds: z.array(z.string().uuid()).optional(),
   })
@@ -81,8 +87,19 @@ export const listProductsQuerySchema = z.object({
   q: z.string().trim().optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
+  // `category_order` / `shop_order` are the curated listings: products with an
+  // order come first (ascending), everything else follows newest-first.
   sort: z
-    .enum(["newest", "price_asc", "price_desc", "title_asc", "stock_asc", "stock_desc"])
+    .enum([
+      "newest",
+      "price_asc",
+      "price_desc",
+      "title_asc",
+      "stock_asc",
+      "stock_desc",
+      "category_order",
+      "shop_order",
+    ])
     .default("newest"),
 });
 

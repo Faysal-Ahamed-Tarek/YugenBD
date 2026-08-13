@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -91,12 +92,18 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center gap-2 px-5 h-16 border-b border-border">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-          Y
-        </span>
-        <span className="font-semibold">YugenBD Admin</span>
-      </div>
+      {/* Same wordmark as the login screen and the storefront — the logo IS the
+          brand here; only "Admin" is added to mark the surface. */}
+      <div className="flex justify-center items-center h-16 border-b border-border">
+  <Image
+    src="/logo.png"
+    alt="YugenBD"
+    width={843}
+    height={560}
+    priority
+    className="h-10 w-auto"
+  />
+</div>
 
       <nav className="flex-1 overflow-y-auto p-3">
         <ul className="space-y-1">

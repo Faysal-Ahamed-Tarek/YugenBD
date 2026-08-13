@@ -97,6 +97,8 @@ export const productService = {
         ingredients: input.ingredients,
         usageInstructions: input.usageInstructions,
         additionInformation: input.additionInformation,
+        categoryOrder: input.categoryOrder ?? null,
+        shopOrder: input.shopOrder ?? null,
         status: input.status,
       },
       input.categoryIds,
@@ -156,6 +158,9 @@ export const productService = {
         ...(input.additionInformation !== undefined
           ? { additionInformation: input.additionInformation }
           : {}),
+        // null clears the curated position (back to newest-first).
+        ...(input.categoryOrder !== undefined ? { categoryOrder: input.categoryOrder } : {}),
+        ...(input.shopOrder !== undefined ? { shopOrder: input.shopOrder } : {}),
         ...(input.status ? { status: input.status } : {}),
       },
       input.categoryIds,

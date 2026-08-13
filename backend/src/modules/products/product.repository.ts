@@ -138,21 +138,31 @@ function buildFilters(
   return conditions.length > 0 ? and(...conditions) : undefined;
 }
 
-function sortColumn(sort: ListProductsQuery["sort"]) {
+/**
+ * Ordering clauses for a sort mode. Returns an array because the curated sorts
+ * need a tiebreaker: the admin-set position first (NULLS LAST, so unpositioned
+ * products sink below the curated ones instead of floating to the top on
+ * Postgres' default ASC ordering), then newest-first as before.
+ */
+function sortColumns(sort: ListProductsQuery["sort"]) {
   switch (sort) {
     case "price_asc":
-      return asc(products.basePrice);
+      return [asc(products.basePrice)];
     case "price_desc":
-      return desc(products.basePrice);
+      return [desc(products.basePrice)];
     case "stock_asc":
-      return asc(products.stock);
+      return [asc(products.stock)];
     case "stock_desc":
-      return desc(products.stock);
+      return [desc(products.stock)];
     case "title_asc":
-      return asc(products.title);
+      return [asc(products.title)];
+    case "category_order":
+      return [sql`${products.categoryOrder} asc nulls last`, desc(products.createdAt)];
+    case "shop_order":
+      return [sql`${products.shopOrder} asc nulls last`, desc(products.createdAt)];
     case "newest":
     default:
-      return desc(products.createdAt);
+      return [desc(products.createdAt)];
   }
 }
 
@@ -202,7 +212,7 @@ export const productRepository = {
         .select()
         .from(products)
         .where(where)
-        .orderBy(sortColumn(query.sort))
+        .orderBy(...sortColumns(query.sort))
         .limit(query.limit)
         .offset(offset),
       db.select({ count: sql<number>`count(*)::int` }).from(products).where(where),

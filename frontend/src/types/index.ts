@@ -80,7 +80,17 @@ export interface ProductListParams {
   concernSlug?: string;
   minPrice?: number;
   maxPrice?: number;
-  sort?: "newest" | "oldest" | "price_asc" | "price_desc" | "title_asc" | "title_desc";
+  // `category_order` / `shop_order` are the admin-curated listings: products
+  // with a position first (ascending), the rest newest-first behind them.
+  sort?:
+    | "newest"
+    | "oldest"
+    | "price_asc"
+    | "price_desc"
+    | "title_asc"
+    | "title_desc"
+    | "category_order"
+    | "shop_order";
 }
 
 /** A page of products plus its pagination meta (from GET /products). */

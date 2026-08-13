@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import Sidebar from "@/components/ui/Sidebar";
@@ -39,7 +40,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <path d="M4 7h16M4 12h16M4 17h16" />
           </svg>
         </button>
-        <span className="font-semibold">YugenBD Admin</span>
+        <Image src="/logo.png" alt="YugenBD" width={843} height={560} priority className="h-8 w-auto" />
+        <span className="text-sm font-semibold uppercase tracking-wide text-muted">Admin</span>
       </div>
 
       {/* Mobile drawer */}

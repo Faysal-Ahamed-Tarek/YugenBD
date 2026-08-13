@@ -29,7 +29,8 @@ function readFilters(sp: Record<string, string | string[] | undefined>): ActiveF
 
 /** Build the API query params from URL filters. */
 function toQuery(filters: ActiveFilters): ProductListParams {
-  const q: ProductListParams = { limit: PAGE_SIZE, page: 1 };
+  // Admin-curated shop order; products without one follow, newest first.
+  const q: ProductListParams = { limit: PAGE_SIZE, page: 1, sort: "shop_order" };
   if (filters.q) q.search = filters.q;
   if (filters.category) q.categorySlug = filters.category;
   if (filters.concern) q.concernSlug = filters.concern;

@@ -111,6 +111,9 @@ export interface Product {
   ingredients: string | null;
   usageInstructions: string | null;
   additionInformation: string | null;
+  // Optional curated positions; null = unordered (falls back to newest-first).
+  categoryOrder: number | null;
+  shopOrder: number | null;
   status: "draft" | "published";
   createdAt: string;
   updatedAt: string;

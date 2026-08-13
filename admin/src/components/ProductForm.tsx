@@ -28,6 +28,10 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
   const [usageInstructions, setUsageInstructions] = useState(initial?.usageInstructions ?? "");
   const [additionInformation, setAdditionInformation] = useState(initial?.additionInformation ?? "");
   const [status, setStatus] = useState<"draft" | "published">(initial?.status ?? "draft");
+  // Curated positions — kept as strings so the inputs can be left blank
+  // (blank = no position, the product just sorts newest-first).
+  const [categoryOrder, setCategoryOrder] = useState(initial?.categoryOrder?.toString() ?? "");
+  const [shopOrder, setShopOrder] = useState(initial?.shopOrder?.toString() ?? "");
   const [categoryIds, setCategoryIds] = useState<Set<string>>(
     new Set(initial?.categories.map((c) => c.id) ?? [])
   );
@@ -81,6 +85,17 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
     if (discount != null && discount >= base) return setError("Discount price must be less than base price.");
     if (categoryIds.size === 0) return setError("Select at least one category.");
 
+    // Blank clears the position (null); anything typed must be a whole number ≥ 0.
+    const toOrder = (value: string) => (value.trim() === "" ? null : parseInt(value, 10));
+    const categoryOrderValue = toOrder(categoryOrder);
+    const shopOrderValue = toOrder(shopOrder);
+    if (categoryOrderValue != null && (Number.isNaN(categoryOrderValue) || categoryOrderValue < 0)) {
+      return setError("Category order must be a positive number (or left blank).");
+    }
+    if (shopOrderValue != null && (Number.isNaN(shopOrderValue) || shopOrderValue < 0)) {
+      return setError("Shop page order must be a positive number (or left blank).");
+    }
+
     const payload = {
       title: title.trim(),
       basePrice: base,
@@ -91,6 +106,8 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
       ingredients: ingredients || undefined,
       usageInstructions: usageInstructions || undefined,
       additionInformation: additionInformation || undefined,
+      categoryOrder: categoryOrderValue,
+      shopOrder: shopOrderValue,
       status,
       categoryIds: [...categoryIds],
       concernIds: [...concernIds],
@@ -133,6 +150,25 @@ export default function ProductForm({ initial }: { initial?: DetailProduct }) {
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>
+        </div>
+
+        {/* Optional display positions. Lower number = shown earlier; products
+            left blank list after the ordered ones, newest first. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
+          <Text
+            label="Category page order (optional)"
+            value={categoryOrder}
+            onChange={setCategoryOrder}
+            type="number"
+            hint="Position on its category pages. Leave blank for newest-first."
+          />
+          <Text
+            label="Shop page order (optional)"
+            value={shopOrder}
+            onChange={setShopOrder}
+            type="number"
+            hint="Position on the all-products shop page. Leave blank for newest-first."
+          />
         </div>
       </section>
 
