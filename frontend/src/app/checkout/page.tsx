@@ -52,7 +52,7 @@ const DEFAULT_FREE_DELIVERY_THRESHOLD = 3000;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, status } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(DEFAULT_FREE_DELIVERY_THRESHOLD);
@@ -204,7 +204,15 @@ export default function CheckoutPage() {
   // Free delivery unlocks at the threshold — the priced zone options are hidden
   // and the zone is derived from the chosen division (Dhaka → inside Dhaka) so
   // the order still records an accurate zone + estimate for logistics.
-  const freeDelivery = alwaysFreeDelivery || subtotal >= freeDeliveryThreshold;
+  // The admin's "free delivery for all orders" toggle is a MEMBER PERK: it only
+  // applies to signed-in customers (mirrors order.service). Guests still get the
+  // priced zone options and only unlock free delivery at the threshold.
+  // While the silent refresh is in flight we don't know yet — hold the section
+  // rather than flashing the paid options at a customer who is signed in.
+  const signedIn = status === "authenticated";
+  const authPending = status === "loading";
+  const freeDelivery = (alwaysFreeDelivery && signedIn) || subtotal >= freeDeliveryThreshold;
+  const holdDelivery = alwaysFreeDelivery && authPending && !freeDelivery;
   const derivedZone: DeliveryZone = divisionName === "Dhaka" ? "inside_dhaka" : "outside_dhaka";
   const effectiveZone: DeliveryZone | null = freeDelivery ? derivedZone : zone;
   const deliveryFee = freeDelivery ? 0 : selected?.fee ?? null;
@@ -390,7 +398,11 @@ export default function CheckoutPage() {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">Delivery</h2>
-            {freeDelivery ? (
+            {holdDelivery ? (
+              <div className="rounded-xl border border-border p-4 text-sm text-muted">
+                Checking your account for free delivery…
+              </div>
+            ) : freeDelivery ? (
               <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
                 <span className="mt-0.5 inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-green-100 text-green-700">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -400,11 +412,25 @@ export default function CheckoutPage() {
                 <div>
                   <p className="font-semibold text-green-800">Free delivery unlocked!</p>
                   <p className="mt-0.5 text-sm text-green-700">
-                    Your order qualifies for free delivery anywhere in Bangladesh — no delivery charge.
+                    Your order qualifies for free delivery anywhere in Bangladesh
                   </p>
                 </div>
               </div>
             ) : (
+            <>
+            {/* Guests: the "all orders" perk needs an account, so point them at
+                login instead of silently charging them the zone fee. */}
+            {alwaysFreeDelivery && !signedIn && (
+              <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+                <p className="text-sm">Log in to get free delivery on your order</p>
+                <Link
+                  href="/login"
+                  className="shrink-0 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+                >
+                  Log In
+                </Link>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {DELIVERY_OPTIONS.map((option) => {
                 const active = zone === option.zone;
@@ -440,6 +466,7 @@ export default function CheckoutPage() {
                 );
               })}
             </div>
+            </>
             )}
           </section>
 

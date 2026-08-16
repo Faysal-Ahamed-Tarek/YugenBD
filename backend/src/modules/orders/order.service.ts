@@ -19,7 +19,10 @@ const DELIVERY = {
 /**
  * Free delivery is admin-configurable (delivery module): orders whose subtotal
  * reaches the saved threshold ship free regardless of zone, and an "always
- * free" toggle waives the fee outright. Authoritative on the server — the
+ * free" toggle waives the fee outright — but that toggle is a MEMBER PERK: it
+ * only applies to orders placed by a signed-in customer (userId != null).
+ * Guests (and manual orders, which have no account) keep paying the zone fee
+ * until the subtotal threshold is met. Authoritative on the server — the
  * storefront only mirrors these values for display.
  */
 
@@ -125,10 +128,13 @@ async function buildAndInsertOrder(
   const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
   const { fee: zoneFee, estimate } = DELIVERY[input.deliveryZone];
   // Free delivery when the admin waived it on this order (manual orders only),
-  // toggled it on outright, or once the subtotal reaches the admin-set threshold.
+  // when the "always free" perk applies (signed-in customers only), or once the
+  // subtotal reaches the admin-set threshold (everyone, guests included).
   const { freeDeliveryThreshold, alwaysFree } = await deliveryService.resolve();
   const fee =
-    input.freeDelivery || alwaysFree || subtotal >= freeDeliveryThreshold ? 0 : zoneFee;
+    input.freeDelivery || (alwaysFree && userId !== null) || subtotal >= freeDeliveryThreshold
+      ? 0
+      : zoneFee;
   const total = subtotal + fee;
 
   const isBkash = input.paymentMethod === "bkash";

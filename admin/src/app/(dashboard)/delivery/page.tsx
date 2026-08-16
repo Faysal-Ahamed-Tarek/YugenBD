@@ -9,9 +9,12 @@ import type { DeliverySettings } from "@/lib/types";
  * Free-delivery rules, replacing the value that used to be hardcoded as
  * FREE_DELIVERY_THRESHOLD = 3000 on both the server and the checkout page.
  *
- * The "always free" toggle short-circuits the threshold: when on, every order
- * ships free no matter the subtotal. The backend recomputes the authoritative
- * fee from these same settings when an order is placed.
+ * The "always free" toggle is a MEMBER PERK: when on, every order placed by a
+ * LOGGED-IN customer ships free no matter the subtotal. Guests are unaffected —
+ * they pick a priced zone and only ship free once the subtotal reaches the
+ * threshold below, so the threshold stays editable while the toggle is on. The
+ * backend recomputes the authoritative fee from these same settings when an
+ * order is placed.
  */
 export default function DeliveryPage() {
   const [threshold, setThreshold] = useState("");
@@ -77,19 +80,20 @@ export default function DeliveryPage() {
               step="any"
               value={threshold}
               onChange={(e) => setThreshold(e.target.value)}
-              disabled={alwaysFree}
               className="w-full h-11 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <p className="mt-1 text-xs text-muted">
-              Orders with a subtotal of this amount or more ship free.
+              Orders with a subtotal of this amount or more ship free
+              {alwaysFree ? " — this is what guests (not logged in) get." : "."}
             </p>
           </div>
 
           <div className="flex items-start justify-between gap-4 rounded-xl border border-border p-3.5">
             <div>
-              <p className="text-sm font-medium">Free delivery for all orders</p>
+              <p className="text-sm font-medium">Free delivery for all orders (logged-in customers)</p>
               <p className="mt-0.5 text-xs text-muted">
-                Waives the delivery fee on every order, ignoring the amount above.
+                Waives the delivery fee on every order placed from a customer account, ignoring the
+                amount above. Guests still pay the zone fee below the amount above.
               </p>
             </div>
             <button
@@ -113,7 +117,13 @@ export default function DeliveryPage() {
           <p className="rounded-lg bg-surface px-3 py-2.5 text-sm text-muted">
             {alwaysFree ? (
               <>
-                Every order currently ships <span className="text-foreground font-medium">free</span>.
+                Logged-in customers currently ship{" "}
+                <span className="text-foreground font-medium">free</span> on every order. Guests ship
+                free from{" "}
+                <span className="text-foreground font-medium">
+                  {Number.isNaN(amount) ? "—" : formatPrice(amount)}
+                </span>{" "}
+                up.
               </>
             ) : Number.isNaN(amount) ? (
               "Enter an amount to see the rule."
