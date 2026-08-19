@@ -10,6 +10,7 @@ import ProductAccordion, { type AccordionSection } from "@/components/product/Pr
 import ProductCarousel from "@/components/product/ProductCarousel";
 import ReviewsSection from "@/components/product/ReviewsSection";
 import { sanitizeHtml, hasContent } from "@/lib/sanitize";
+import { socialMeta, OG_IMAGE } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -37,13 +38,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: product.title,
     description,
     alternates: { canonical: `/product/${product.slug}` },
-    openGraph: {
-      type: "website",
+    // The product photo is the share card; products without one fall back to
+    // the site-wide featured image rather than sharing with no preview.
+    ...socialMeta({
       title: product.title,
       description,
       url: `/product/${product.slug}`,
-      images: image ? [{ url: image, alt: product.title }] : undefined,
-    },
+      images: image ? [{ url: image, alt: product.title }] : [OG_IMAGE],
+    }),
   };
 }
 

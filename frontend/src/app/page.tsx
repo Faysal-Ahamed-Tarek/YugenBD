@@ -4,28 +4,18 @@ import type { Product } from "@/types";
 import HeroSlider from "@/components/home/HeroSlider";
 import ShopByConcern from "@/components/home/ShopByConcern";
 import ProductCarousel from "@/components/product/ProductCarousel";
+import { socialMeta } from "@/lib/seo";
+
+const HOME_TITLE = "YugenBD — Nourish.Renew.Glow";
+const HOME_DESCRIPTION =
+  "Every product is authentically sourced from Japan with care and intention. We hope these J-Beauty essentials bring a little more radiance to your everyday routine.";
 
 export const metadata: Metadata = {
-  title: "YugenBD — Nourish.Renew.Glow",
-  description:
-    "every products is authentically sourced from japan with care and intention. we hope these j-beauty essentials bring a little more radiance to your everyday routine.",
+  // `absolute` opts out of the root layout's "%s | YugenBD" title template.
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
   alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    siteName: "YugenBD",
-    title: "YugenBD — Beauty & Personal Care, Cash on Delivery in Bangladesh",
-    description:
-      "Authentic skincare, haircare, makeup and grooming essentials. Cash on delivery across Bangladesh.",
-    url: "/",
-    images: [{ url: "/manual-images/hero-1.jpg", width: 1920, height: 760, alt: "YugenBD" }],
-    locale: "en_US",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "YugenBD — Beauty & Personal Care, Cash on Delivery in Bangladesh",
-    description:
-      "Authentic skincare, haircare, makeup and grooming essentials. Cash on delivery across Bangladesh.",
-  },
+  ...socialMeta({ title: HOME_TITLE, description: HOME_DESCRIPTION, url: "/" }),
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

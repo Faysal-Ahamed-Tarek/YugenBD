@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import ProductGrid from "@/components/product/ProductGrid";
 import LoadMoreProducts from "@/components/product/LoadMoreProducts";
 import EmptyProducts from "@/components/product/EmptyProducts";
+import { socialMeta, OG_IMAGE } from "@/lib/seo";
 
 const PAGE_SIZE = 16;
 
@@ -17,10 +18,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const concern = await getConcernBySlug(slug);
   if (!concern) return { title: "Concern not found" };
 
+  const title = `${concern.title} — Shop by Concern`;
+  const description = `Products that target ${concern.title.toLowerCase()} at YugenBD — cash on delivery across Bangladesh.`;
+
   return {
-    title: `${concern.title} — Shop by Concern`,
-    description: `Products that target ${concern.title.toLowerCase()} at YugenBD — cash on delivery across Bangladesh.`,
+    title,
+    description,
     alternates: { canonical: `/concern/${concern.slug}` },
+    // The concern's own image is its social share card; fall back to the
+    // site-wide one if a concern has no image set.
+    ...socialMeta({
+      title,
+      description,
+      url: `/concern/${concern.slug}`,
+      images: concern.imageUrl
+        ? [{ url: concern.imageUrl, alt: concern.title }]
+        : [OG_IMAGE],
+    }),
   };
 }
 

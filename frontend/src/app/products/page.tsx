@@ -8,6 +8,7 @@ import LoadMoreProducts from "@/components/product/LoadMoreProducts";
 import EmptyProducts from "@/components/product/EmptyProducts";
 import ProductFilters, { type ActiveFilters } from "@/components/product/ProductFilters";
 import MobileFilters from "@/components/product/MobileFilters";
+import { socialMeta } from "@/lib/seo";
 
 const PAGE_SIZE = 16;
 const GAP = "gap-x-4 gap-y-8";
@@ -41,16 +42,26 @@ function toQuery(filters: ActiveFilters): ProductListParams {
   return q;
 }
 
+const SHOP_TITLE = "YugenBD | Authentic Japanese Skincare Products in BD";
+const SHOP_DESCRIPTION =
+  "Browse authentic Japanese sunscreens, moisturisers, hair masks, oil cleansers, Face Wash at YugenBD";
+
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const filters = readFilters(await searchParams);
   const [categories, concerns] = await Promise.all([getCategories(), getConcerns()]);
   const catName = categories.find((c) => c.slug === filters.category)?.name;
   const conName = concerns.find((c) => c.slug === filters.concern)?.title;
   const parts = [catName, conName].filter(Boolean);
-  const title = parts.length > 0 ? `${parts.join(" · ")} Products` : "Shop All Products";
+
+  // Filtered views keep a descriptive title (and the "%s | YugenBD" template);
+  // the plain /products landing page uses the canonical shop title verbatim.
+  const heading = parts.length > 0 ? `${parts.join(" · ")} Products` : SHOP_TITLE;
+
   return {
-    title,
-    description: "Browse all beauty and personal care products at YugenBD — cash on delivery across Bangladesh.",
+    title: parts.length > 0 ? heading : { absolute: SHOP_TITLE },
+    description: SHOP_DESCRIPTION,
+    alternates: { canonical: "/products" },
+    ...socialMeta({ title: heading, description: SHOP_DESCRIPTION, url: "/products" }),
   };
 }
 

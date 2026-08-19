@@ -7,6 +7,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import AnnouncementMarquee from "@/components/home/AnnouncementMarquee";
 import { AuthProvider } from "@/lib/auth";
 import { getAnnouncements } from "@/lib/api";
+import { defaultSocialMeta } from "@/lib/seo";
 
 const jost = Jost({
   variable: "--font-jost",
@@ -14,14 +15,21 @@ const jost = Jost({
   display: "swap",
 });
 
+const DEFAULT_TITLE = "YugenBD | Authentic Japanese Skincare Products in BD";
+const DEFAULT_DESCRIPTION =
+  "Browse authentic Japanese sunscreens, moisturisers, hair masks, oil cleansers, Face Wash at YugenBD";
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: {
-    default: "YugenBD — Beauty & Personal Care, Cash on Delivery in Bangladesh",
+    default: DEFAULT_TITLE,
     template: "%s | YugenBD",
   },
-  description:
-    "Shop authentic skincare, haircare, makeup and personal care products in Bangladesh. Cash on delivery nationwide.",
+  description: DEFAULT_DESCRIPTION,
+  // Inherited by every page that does not declare its own `openGraph`, so a
+  // link shared to Messenger / WhatsApp / Facebook always carries the brand
+  // card. Pages with a better image (products, concerns) override it.
+  ...defaultSocialMeta,
 };
 
 export default async function RootLayout({

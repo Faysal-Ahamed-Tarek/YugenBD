@@ -12,7 +12,8 @@ interface ProductCarouselProps {
 
 /**
  * Reusable titled product section: 2 cards per view on mobile (scroll-snap
- * swipe), 4 per view on desktop with arrow controls. Caps at 8 products.
+ * swipe), 4 per view on desktop. Arrow controls show on mobile as well as
+ * desktop, matching "Shop by Concern". Caps at 8 products.
  */
 export default function ProductCarousel({ title, products, viewAllHref }: ProductCarouselProps) {
   const items = products.slice(0, 8);
@@ -32,7 +33,7 @@ export default function ProductCarousel({ title, products, viewAllHref }: Produc
         )}
       </div>
 
-      <Carousel label={title}>
+      <Carousel label={title} mobileArrows>
         {items.map((product) => (
           <li key={product.id} className="snap-start list-none">
             <ProductCard product={product} />
