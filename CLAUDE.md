@@ -22,7 +22,7 @@ npm run dev          # tsx watch, http://localhost:4000
 npm run build        # tsc -> dist/
 npm run typecheck    # tsc --noEmit  (backend has real type checking)
 npm run db:generate  # drizzle-kit generate — create a migration from schema changes
-npm run db:migrate   # custom runner (src/db/migrate.ts) — applies committed migrations to Neon
+npm run db:migrate   # custom runner (src/db/migrate.ts) — applies committed migrations to the self-hosted DB
 npm run db:push      # push schema directly (dev convenience; prefer generate+migrate)
 npm run db:studio    # drizzle-kit studio
 npm run seed         # idempotent seeders (see gotcha below)
@@ -52,7 +52,7 @@ Modules: `auth`, `products`, `categories`, `concerns`, `reviews`, `orders`, `add
 
 Response envelope is `{ success, data, meta? }` via `sendSuccess`; errors go through `errorHandler` (Zod → 400, `ApiError` → its status, unknown → 500). **Money is stored as `numeric` and serialized as strings** in JSON (e.g. `"basePrice": "950.00"`). All env vars are validated by a Zod schema in `config/env.ts` — add new ones there or the process refuses to boot.
 
-**Database**: PostgreSQL on Neon via Drizzle + `@neondatabase/serverless` over WebSocket. Any new DB entry point must set `neonConfig.webSocketConstructor = ws` (see `db/client.ts`). Schema lives in `db/schema/*.ts`; migrations in `db/migrations/` are **committed to the repo and must stay in sync with the DB** — generate them, commit the `.sql` + `meta/*_snapshot.json` together. Seeders are idempotent (skip-if-exists / backfill-nulls-only).
+**Database**: Self-hosted PostgreSQL via Drizzle + `node-postgres` (`pg`) over standard TCP. Any new DB entry point must build its `Pool` config through `buildPoolConfig()` in `db/pool-config.ts` (centralises the `DATABASE_SSL` disable/require/verify handling) — see `db/client.ts`. Schema lives in `db/schema/*.ts`; migrations in `db/migrations/` are **committed to the repo and must stay in sync with the DB** — generate them, commit the `.sql` + `meta/*_snapshot.json` together. Seeders are idempotent (skip-if-exists / backfill-nulls-only).
 
 **Email** (`config/mailer.ts`, nodemailer over SMTP): account verification, password reset, and a new-order notification to `ORDER_NOTIFICATION_EMAIL` (default `yugenbd@gmail.com`) fired from `orderService.create` — deliberately not awaited, so SMTP can never slow or fail a checkout. When `SMTP_USER`/`SMTP_PASS` are absent the link is logged to the console instead of sent, so flows stay testable locally. Send failures are logged, never rethrown — a mail outage must not 500 a registration. `FRONTEND_URL` builds the link targets.
 

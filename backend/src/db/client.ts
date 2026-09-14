@@ -1,16 +1,12 @@
 import "dotenv/config";
-import ws from "ws";
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
+import { buildPoolConfig } from "./pool-config";
 
-// Node has no built-in WebSocket, so the Neon driver needs one supplied.
-neonConfig.webSocketConstructor = ws;
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set");
-}
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Self-hosted PostgreSQL over standard TCP (node-postgres). Previously this
+// used the Neon serverless driver over WebSocket; queries are unchanged because
+// Drizzle's query layer is driver-agnostic.
+const pool = new Pool(buildPoolConfig());
 
 export const db = drizzle(pool, { schema });

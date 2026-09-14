@@ -17,7 +17,7 @@ git pull --ff-only
 echo "▶ Backend: install + migrate + build"
 cd "$ROOT/backend"
 npm ci
-npm run db:migrate        # applies any new Drizzle migrations to Neon
+npm run db:migrate        # applies any new Drizzle migrations to the self-hosted DB
 npm run build
 
 echo "▶ Frontend: install + build"

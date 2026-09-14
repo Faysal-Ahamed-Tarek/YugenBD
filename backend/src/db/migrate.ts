@@ -1,17 +1,11 @@
 import "dotenv/config";
-import ws from "ws";
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-serverless";
-import { migrate } from "drizzle-orm/neon-serverless/migrator";
-
-neonConfig.webSocketConstructor = ws;
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { buildPoolConfig } from "./pool-config";
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is not set");
-  }
-
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool(buildPoolConfig());
   const db = drizzle(pool);
 
   console.log("Running migrations...");

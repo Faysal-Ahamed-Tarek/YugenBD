@@ -5,6 +5,13 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(4000),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  // TLS mode for the self-hosted PostgreSQL connection (see db/pool-config.ts):
+  //   disable  -> no TLS (localhost / private LAN)
+  //   require  -> TLS on, certificate not verified (self-signed)
+  //   verify   -> TLS on, verified against DATABASE_SSL_CA
+  // Omit to auto-detect from sslmode= in DATABASE_URL.
+  DATABASE_SSL: z.enum(["disable", "require", "verify"]).optional(),
+  DATABASE_SSL_CA: z.string().optional(),
   JWT_ACCESS_SECRET: z.string().min(1, "JWT_ACCESS_SECRET is required"),
   JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET is required"),
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
