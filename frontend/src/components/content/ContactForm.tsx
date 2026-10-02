@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const WHATSAPP_NUMBER = "8801778931591";
+const WHATSAPP_NUMBER = "8109019522926";
 
 const SUBJECTS = [
   "Product enquiry",

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/faq" },
 };
 
-const WHATSAPP = "https://wa.me/8801778931591";
+const WHATSAPP = "https://wa.me/8109019522926";
 
 // The four fixed segments and their display order / titles.
 const SEGMENTS: { key: FaqSegment; num: string; title: string }[] = [

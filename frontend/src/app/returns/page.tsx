@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/returns" },
 };
 
-const WHATSAPP = "https://wa.me/8801778931591";
+const WHATSAPP = "https://wa.me/8109019522926";
 
 /** Bangla helper — a subtle secondary line under English content. */
 function Bn({ children, className = "" }: { children: React.ReactNode; className?: string }) {

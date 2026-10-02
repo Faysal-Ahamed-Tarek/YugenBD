@@ -16,7 +16,7 @@ const BD_PHONE = /^01[3-9]\d{8}$/;
 
 // bKash merchant/personal number shown to the customer (they Send Money to it,
 // then type the transaction id/amount). Configurable via env.
-const BKASH_NUMBER = process.env.NEXT_PUBLIC_BKASH_NUMBER ?? "01924415506";
+const BKASH_NUMBER = process.env.NEXT_PUBLIC_BKASH_NUMBER ?? "01402933683";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 

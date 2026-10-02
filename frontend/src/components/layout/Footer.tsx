@@ -44,8 +44,8 @@ export default function Footer({ announcements = [] }: { announcements?: Announc
 
             <p className="mt-4 text-sm text-muted">
               Hotline:{" "}
-              <a href="tel:+8801778931591" className="hover:text-primary transition-colors">
-                01778-931591
+              <a href="tel:+8801402933683" className="hover:text-primary transition-colors">
+                01402-933683
               </a>
             </p>
           </div>

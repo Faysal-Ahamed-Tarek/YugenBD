@@ -29,7 +29,7 @@ function buildJsonLd(newArrivals: Product[]) {
     logo: `${SITE_URL}/manual-images/logo.svg`,
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+8801778931591",
+      telephone: "+8801402933683",
       contactType: "customer service",
       areaServed: "BD",
     },

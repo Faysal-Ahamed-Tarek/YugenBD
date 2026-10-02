@@ -6,7 +6,7 @@ import { formatPrice } from "@/lib/format";
 import ProductImage from "@/components/product/ProductImage";
 
 const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-const WHATSAPP_NUMBER = "8801924415506";
+const WHATSAPP_NUMBER = "8109019522926";
 
 export const metadata: Metadata = {
   title: "Order Confirmed",

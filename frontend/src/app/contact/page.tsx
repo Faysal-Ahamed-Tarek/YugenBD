@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
 };
 
-const PHONE_DISPLAY = "01778-931591";
-const PHONE_TEL = "+8801778931591";
-const WHATSAPP = "https://wa.me/8801778931591";
+const PHONE_DISPLAY = "01402-933683";
+const PHONE_TEL = "+8801402933683";
+const WHATSAPP = "https://wa.me/8109019522926";
 const EMAIL = "bdyugen@gmail.com";
 
 const METHODS = [

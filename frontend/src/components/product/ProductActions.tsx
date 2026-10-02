@@ -5,8 +5,8 @@ import { useState } from "react";
 import type { ProductDetail } from "@/types";
 import { addToCart } from "@/lib/cart";
 
-// WhatsApp order number in international format (no "+"). Local 01924415506 → 880…
-const WHATSAPP_NUMBER = "8801924415506";
+// WhatsApp order number in international format (no "+").
+const WHATSAPP_NUMBER = "8109019522926";
 
 /**
  * Quantity selector + purchase actions. "Order Now" adds the chosen quantity to
