@@ -90,7 +90,8 @@ export interface ProductListParams {
     | "title_asc"
     | "title_desc"
     | "category_order"
-    | "shop_order";
+    | "shop_order"
+    | "stock_desc";
 }
 
 /** A page of products plus its pagination meta (from GET /products). */

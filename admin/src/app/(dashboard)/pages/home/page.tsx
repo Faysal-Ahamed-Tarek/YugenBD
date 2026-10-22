@@ -10,12 +10,14 @@ import SingleImageUpload from "@/components/ui/SingleImageUpload";
 
 const PLACEHOLDER = "/placeholder.svg";
 
-// Curated home-page product sections. Each is backed by a category (seeded by
-// migration 0026); a product appears in a section when it's linked to that
-// category, so these pickers just add/remove the category on the product.
+// Curated product sections. Each is backed by a category (seeded by migration
+// 0026); a product appears in a section when it's linked to that category, so
+// these pickers just add/remove the category on the product. (The home page's
+// "Trending Products" row is automatic — in-stock products by stock — so it
+// has no picker.)
 const PRODUCT_SECTIONS = [
-  { slug: "best-seller", title: "Best Selling Products" },
-  { slug: "recommended-for-you", title: "Recommended for You" },
+  { slug: "best-seller", title: "Best Selling Products", where: "on the home page" },
+  { slug: "recommended-for-you", title: "Recommended for You", where: "under each product page" },
 ] as const;
 
 export default function HomePageAdmin() {
@@ -30,7 +32,7 @@ export default function HomePageAdmin() {
       <HeroSlidesSection />
       <AnnouncementsSection />
       {PRODUCT_SECTIONS.map((section) => (
-        <ProductSectionPicker key={section.slug} slug={section.slug} title={section.title} />
+        <ProductSectionPicker key={section.slug} slug={section.slug} title={section.title} where={section.where} />
       ))}
     </div>
   );
@@ -384,7 +386,7 @@ function AnnouncementModal({
 
 /* ──────────────────────── Featured product sections ─────────────────────── */
 
-function ProductSectionPicker({ slug, title }: { slug: string; title: string }) {
+function ProductSectionPicker({ slug, title, where }: { slug: string; title: string; where: string }) {
   const [category, setCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -455,7 +457,7 @@ function ProductSectionPicker({ slug, title }: { slug: string; title: string }) 
       <div className="mb-4">
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="text-sm text-muted">
-          Products shown in the &ldquo;{title}&rdquo; section on the home page (up to 8, newest first). Draft
+          Products shown in the &ldquo;{title}&rdquo; section {where} (up to 8, newest first). Draft
           products are listed here but hidden on the storefront.
         </p>
       </div>
@@ -504,7 +506,7 @@ function ProductSectionPicker({ slug, title }: { slug: string; title: string }) 
             <p className="text-sm text-muted">Loading…</p>
           ) : products.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted">
-              No products yet — the section is hidden on the home page until you add some.
+              No products added yet.
             </p>
           ) : (
             <ul className="space-y-2">
