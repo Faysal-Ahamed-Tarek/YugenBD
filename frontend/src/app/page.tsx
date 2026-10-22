@@ -66,7 +66,7 @@ function buildJsonLd(newArrivals: Product[]) {
 export default async function HomePage() {
   // All sections fetched in parallel on the server; the page is served as
   // static HTML with 5-minute ISR revalidation.
-  const [newArrivals, skincare, haircare, makeup, concerns, heroSlides, bestSellers] = await Promise.all([
+  const [newArrivals, skincare, haircare, makeup, concerns, heroSlides, bestSellers, recommended] = await Promise.all([
     getProducts({ sort: "newest", limit: 8 }),
     getProducts({ categorySlug: "skincare", limit: 8 }),
     getProducts({ categorySlug: "haircare", limit: 8 }),
@@ -74,6 +74,7 @@ export default async function HomePage() {
     getConcerns(),
     getHeroSlides(),
     getProducts({ categorySlug: "best-seller", limit: 8 }),
+    getProducts({ categorySlug: "recommended-for-you", limit: 8 }),
   ]);
 
   const jsonLd = buildJsonLd(newArrivals);
@@ -94,7 +95,15 @@ export default async function HomePage() {
       <ShopByConcern concerns={concerns} />
 
       {bestSellers.length > 0 && (
-        <ProductCarousel title="Best Sellers" products={bestSellers} viewAllHref="/category/best-seller" />
+        <ProductCarousel title="Best Selling Products" products={bestSellers} viewAllHref="/category/best-seller" />
+      )}
+
+      {recommended.length > 0 && (
+        <ProductCarousel
+          title="Recommended for You"
+          products={recommended}
+          viewAllHref="/category/recommended-for-you"
+        />
       )}
 
       <ProductCarousel title="New Arrivals" products={newArrivals} viewAllHref="/category/new-arrival" />

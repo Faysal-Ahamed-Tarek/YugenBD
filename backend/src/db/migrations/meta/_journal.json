@@ -183,6 +183,13 @@
       "when": 1786649904119,
       "tag": "0025_cooing_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792689923465,
+      "tag": "0026_home_product_sections",
+      "breakpoints": true
     }
   ]
 }

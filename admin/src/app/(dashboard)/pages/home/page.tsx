@@ -3,20 +3,35 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { HeroSlide, Announcement } from "@/lib/types";
+import type { HeroSlide, Announcement, Category, Product } from "@/lib/types";
 import Modal from "@/components/ui/Modal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import SingleImageUpload from "@/components/ui/SingleImageUpload";
+
+const PLACEHOLDER = "/placeholder.svg";
+
+// Curated home-page product sections. Each is backed by a category (seeded by
+// migration 0026); a product appears in a section when it's linked to that
+// category, so these pickers just add/remove the category on the product.
+const PRODUCT_SECTIONS = [
+  { slug: "best-seller", title: "Best Selling Products" },
+  { slug: "recommended-for-you", title: "Recommended for You" },
+] as const;
 
 export default function HomePageAdmin() {
   return (
     <div className="space-y-10">
       <div>
         <h1 className="text-2xl font-semibold">Home Page</h1>
-        <p className="mt-1 text-sm text-muted">Manage the storefront hero slider and announcement bar.</p>
+        <p className="mt-1 text-sm text-muted">
+          Manage the storefront hero slider, announcement bar and featured product sections.
+        </p>
       </div>
       <HeroSlidesSection />
       <AnnouncementsSection />
+      {PRODUCT_SECTIONS.map((section) => (
+        <ProductSectionPicker key={section.slug} slug={section.slug} title={section.title} />
+      ))}
     </div>
   );
 }
@@ -364,5 +379,165 @@ function AnnouncementModal({
         </div>
       </div>
     </Modal>
+  );
+}
+
+/* ──────────────────────── Featured product sections ─────────────────────── */
+
+function ProductSectionPicker({ slug, title }: { slug: string; title: string }) {
+  const [category, setCategory] = useState<Category | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Product[]>([]);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [cats, list] = await Promise.all([
+        api.get<Category[]>("/categories"),
+        api.get<Product[]>(`/products?categorySlug=${slug}&limit=100`),
+      ]);
+      setCategory(cats.data.find((c) => c.slug === slug) ?? null);
+      setProducts(list.data);
+    } finally {
+      setLoading(false);
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Debounced product search for the "add" list.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      return;
+    }
+    const t = setTimeout(async () => {
+      const res = await api.get<Product[]>(`/products?q=${encodeURIComponent(q)}&limit=8`);
+      setResults(res.data);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const setMembership = async (product: Product, add: boolean) => {
+    if (!category) return;
+    setError(null);
+    const current = product.categories.map((c) => c.id);
+    const categoryIds = add
+      ? Array.from(new Set([...current, category.id]))
+      : current.filter((id) => id !== category.id);
+    if (categoryIds.length === 0) {
+      setError(`"${product.title}" has no other category — give it one on the product page before removing it here.`);
+      return;
+    }
+    setBusyId(product.id);
+    try {
+      await api.patch(`/products/${product.id}`, { categoryIds });
+      if (add) setQuery("");
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not update product.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const selectedIds = new Set(products.map((p) => p.id));
+
+  return (
+    <section className="rounded-2xl border border-border bg-background p-5">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="text-sm text-muted">
+          Products shown in the &ldquo;{title}&rdquo; section on the home page (up to 8, newest first). Draft
+          products are listed here but hidden on the storefront.
+        </p>
+      </div>
+
+      {!loading && !category ? (
+        <p className="rounded-lg bg-primary-light px-3 py-2 text-sm text-primary">
+          The &ldquo;{slug}&rdquo; category is missing. Run the database migrations to create it.
+        </p>
+      ) : (
+        <>
+          <div className="relative mb-4">
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search products to add…"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            {results.length > 0 && (
+              <ul className="mt-2 space-y-1 rounded-xl border border-border p-2">
+                {results.map((p) => (
+                  <li key={p.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-surface">
+                    <ProductThumb product={p} />
+                    <span className="min-w-0 flex-1 truncate text-sm">{p.title}</span>
+                    {selectedIds.has(p.id) ? (
+                      <span className="text-xs text-muted">Added</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setMembership(p, true)}
+                        disabled={busyId === p.id}
+                        className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+                      >
+                        + Add
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {error && <p className="mb-3 rounded-lg bg-primary-light px-3 py-2 text-sm text-primary">{error}</p>}
+
+          {loading ? (
+            <p className="text-sm text-muted">Loading…</p>
+          ) : products.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted">
+              No products yet — the section is hidden on the home page until you add some.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {products.map((p) => (
+                <li key={p.id} className="flex items-center gap-3 rounded-xl border border-border p-2">
+                  <ProductThumb product={p} />
+                  <span className="min-w-0 flex-1 truncate text-sm">{p.title}</span>
+                  {p.status === "draft" && (
+                    <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted">Draft</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setMembership(p, false)}
+                    disabled={busyId === p.id}
+                    aria-label={`Remove ${p.title}`}
+                    className="rounded-lg border border-border px-2 py-1 text-sm text-muted hover:text-red-600 disabled:opacity-40"
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function ProductThumb({ product }: { product: Product }) {
+  return (
+    <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface">
+      <Image src={product.mainImage?.imageUrl ?? PLACEHOLDER} alt="" fill sizes="40px" className="object-cover" />
+    </span>
   );
 }
