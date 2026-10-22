@@ -67,7 +67,7 @@ export default async function Header() {
             flyout (pure CSS group-hover — no client JS). Items wrap instead of
             scrolling so the absolute flyout is never clipped. */}
         <nav aria-label="Categories" className="hidden md:block border-t border-border">
-          <ul className="flex flex-wrap items-center gap-x-6 gap-y-0.5 min-h-11 py-0.5 text-sm font-medium">
+          <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-0.5 min-h-11 py-0.5 text-sm font-medium">
             {categories.map((cat) => {
               const children = cat.children ?? [];
               return (
