@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCategories } from "@/lib/api";
+import { navCategories } from "@/lib/categories";
 import MobileSidebar from "./MobileSidebar";
 import SearchBar from "./SearchBar";
 import CartButton from "./CartButton";
@@ -11,7 +12,7 @@ import LogoLink from "./LogoLink";
  * and cart badge are client components.
  */
 export default async function Header() {
-  const categories = await getCategories();
+  const categories = navCategories(await getCategories());
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">

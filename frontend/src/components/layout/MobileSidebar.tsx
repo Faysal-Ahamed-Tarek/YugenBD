@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Category } from "@/types";
+import { navCategories } from "@/lib/categories";
 import SearchBar from "./SearchBar";
 import SocialIcons from "@/components/ui/SocialIcons";
 
@@ -66,8 +67,9 @@ export default function MobileSidebar({ categories: initialCategories }: { categ
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((json: { data?: Category[] }) => {
         if (cancelled) return;
-        setCategories(json.data ?? []);
-        setStatus((json.data ?? []).length > 0 ? "idle" : "error");
+        const list = navCategories(json.data ?? []);
+        setCategories(list);
+        setStatus(list.length > 0 ? "idle" : "error");
       })
       .catch(() => !cancelled && setStatus("error"));
     return () => {
