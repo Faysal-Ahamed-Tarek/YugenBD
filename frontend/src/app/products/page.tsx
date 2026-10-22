@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCategories, getConcerns, getProductsPage } from "@/lib/api";
+import { navCategories } from "@/lib/categories";
 import type { ProductListParams } from "@/types";
 import Breadcrumbs from "@/components/ui/Breadcrumbs";
 import ProductGrid from "@/components/product/ProductGrid";
@@ -77,6 +78,8 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
   const catName = categories.find((c) => c.slug === filters.category)?.name;
   const conName = concerns.find((c) => c.slug === filters.concern)?.title;
+  // Curated home-section categories are hidden from the filter lists.
+  const filterCategories = navCategories(categories);
 
   // Active filter chips: label + href with that one filter removed.
   const buildHref = (omit: keyof ActiveFilters) => {
@@ -116,7 +119,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
             Desktop: the count (the filter button is lg:hidden). */}
         <div className="mt-2 flex items-center gap-3">
           <MobileFilters
-            categories={categories}
+            categories={filterCategories}
             concerns={concerns}
             current={filters}
             activeCount={chips.length}
@@ -130,7 +133,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8">
         {/* Desktop sidebar filters — scrolls with the page (not sticky) */}
         <aside className="hidden lg:block">
-          <ProductFilters key={filterKey} categories={categories} concerns={concerns} current={filters} />
+          <ProductFilters key={filterKey} categories={filterCategories} concerns={concerns} current={filters} />
         </aside>
 
         {/* Results */}
