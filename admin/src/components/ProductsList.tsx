@@ -28,7 +28,8 @@ export default function ProductsList({ inStockOnly = false }: { inStockOnly?: bo
   // the same column again flips direction. `key` matches the column's
   // sortKey ("price" / "stock"), combined with direction into the backend's
   // "price_asc" / "stock_desc" etc. sort values.
-  const [sort, setSort] = useState<SortState | null>(null);
+  // Stock Products opens sorted highest-stock first.
+  const [sort, setSort] = useState<SortState | null>(inStockOnly ? { key: "stock", direction: "desc" } : null);
   // fetchPage is a stable useCallback (AdminTable only re-runs it on
   // reloadKey/q changes), so the active filters/sort are read from refs
   // rather than the closed-over state — same pattern as the orders status tabs.
