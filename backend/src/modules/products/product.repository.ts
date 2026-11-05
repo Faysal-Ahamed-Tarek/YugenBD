@@ -17,7 +17,7 @@ type ProductRow = typeof products.$inferSelect;
 function buildFilters(
   query: Pick<
     ListProductsQuery,
-    "status" | "categoryId" | "categorySlug" | "concernSlug" | "search" | "q" | "minPrice" | "maxPrice"
+    "status" | "categoryId" | "categorySlug" | "concernSlug" | "search" | "q" | "minPrice" | "maxPrice" | "inStock"
   >
 ) {
   const conditions = [];
@@ -133,6 +133,10 @@ function buildFilters(
 
   if (query.maxPrice != null) {
     conditions.push(lte(effectivePrice, query.maxPrice.toFixed(2)));
+  }
+
+  if (query.inStock) {
+    conditions.push(gte(products.stock, 1));
   }
 
   return conditions.length > 0 ? and(...conditions) : undefined;

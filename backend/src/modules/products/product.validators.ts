@@ -87,6 +87,11 @@ export const listProductsQuerySchema = z.object({
   q: z.string().trim().optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
+  // `inStock=true` keeps only products with stock >= 1 (admin "Stock Products").
+  inStock: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
   // `category_order` / `shop_order` are the curated listings: products with an
   // order come first (ascending), everything else follows newest-first.
   sort: z

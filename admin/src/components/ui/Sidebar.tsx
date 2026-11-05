@@ -24,6 +24,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "M3 10.5L12 3l9 7.5M5 9.5V21h14V9.5" },
   { label: "Products", href: "/products", icon: "M4 7h16l-1.2 13H5.2L4 7zM8.5 7V6a3.5 3.5 0 0 1 7 0v1" },
+  { label: "Stock Products", href: "/stock-products", icon: "M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8" },
   { label: "Categories", href: "/categories", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
   { label: "Concerns", href: "/concerns", icon: "M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" },
   { label: "Orders", href: "/orders", icon: "M6 7h12l1 13H5L6 7zM9 7V5a3 3 0 0 1 6 0v2" },
