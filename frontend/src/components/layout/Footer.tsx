@@ -83,29 +83,8 @@ export default function Footer({ announcements = [] }: { announcements?: Announc
         </div>
 
         {/* Extra bottom padding on mobile keeps content clear of the fixed bottom nav */}
-        <div className="mt-10 border-t border-border pt-5 pb-16 md:pb-0 flex flex-col gap-2 text-center text-sm text-muted md:flex-row md:items-center md:justify-between md:text-left">
-          <p>© {new Date().getFullYear()} YugenBD. All rights reserved.</p>
-          {/* md:pr-14 keeps the credit clear of the fixed desktop BackToTop button */}
-          <p className="md:pr-14">
-            Developed by{" "}
-            <a
-              href="https://www.linkedin.com/in/faysal-ahmed-tarek/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="whitespace-nowrap underline underline-offset-2 hover:text-primary transition-colors"
-            >
-              Faysal Ahmed Tarek
-            </a>{" "}
-            and{" "}
-            <a
-              href="https://www.linkedin.com/in/anamul9901/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="whitespace-nowrap underline underline-offset-2 hover:text-primary transition-colors"
-            >
-              Anamul Haque
-            </a>
-          </p>
+        <div className="mt-10 border-t border-border pt-5 pb-16 md:pb-0 text-center text-sm text-muted">
+          © {new Date().getFullYear()} YugenBD. All rights reserved.
         </div>
       </div>
       <BackToTop />
