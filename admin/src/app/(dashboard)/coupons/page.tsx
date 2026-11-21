@@ -263,7 +263,7 @@ function CouponModal({
             min={0}
             value={minSubtotal}
             onChange={(e) => setMinSubtotal(e.target.value)}
-            className={`${inputClass} max-w-40`}
+            className={inputClass}
           />
         </div>
 
@@ -292,7 +292,7 @@ function CouponModal({
             value={usageLimit}
             onChange={(e) => setUsageLimit(e.target.value)}
             placeholder="Unlimited"
-            className={`${inputClass} max-w-40`}
+            className={inputClass}
           />
           {editing && <p className="mt-1 text-xs text-muted">Used {editing.usedCount} time(s) so far.</p>}
         </div>
