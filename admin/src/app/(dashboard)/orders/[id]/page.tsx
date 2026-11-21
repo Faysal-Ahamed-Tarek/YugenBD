@@ -63,7 +63,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link href="/orders" className="text-sm text-muted hover:text-primary">
