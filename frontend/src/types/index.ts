@@ -80,6 +80,8 @@ export interface ProductListParams {
   concernSlug?: string;
   minPrice?: number;
   maxPrice?: number;
+  /** Only products with stock >= 1 */
+  inStock?: boolean;
   // `category_order` / `shop_order` are the admin-curated listings: products
   // with a position first (ascending), the rest newest-first behind them.
   sort?:

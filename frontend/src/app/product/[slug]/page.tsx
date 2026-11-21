@@ -88,20 +88,17 @@ export default async function ProductPage({ params }: PageProps) {
 
   const primaryCategory = product.categories[0];
 
-  // Post-review sections: "Recommended for You" pulls the admin-curated
-  // recommended-for-you category (falling back to best sellers while it's
-  // empty); "Related products" pulls the product's primary category. Both exclude the product
-  // being viewed. Fetched in parallel; each renders nothing when empty.
+  // Post-review sections: "Trending Products" shows in-stock products in a
+  // random order (same as the home page); "Related products" pulls the
+  // product's primary category. Both exclude the product being viewed. Fetched in parallel; each renders nothing when empty.
   // The admin-set shipment date is only needed for the pre-order notice
   // (0 stock), so it's skipped otherwise.
-  const [curated, bestSellers, sameCategory, shipment] = await Promise.all([
-    getProducts({ categorySlug: "recommended-for-you", limit: 9 }),
-    getProducts({ categorySlug: "best-seller", limit: 9 }),
+  const [inStock, sameCategory, shipment] = await Promise.all([
+    getProducts({ inStock: true, limit: 100 }),
     primaryCategory ? getProducts({ categorySlug: primaryCategory.slug, limit: 9 }) : Promise.resolve([]),
     product.stock === 0 ? getShipmentDate() : Promise.resolve(null),
   ]);
-  const useCurated = curated.length > 0;
-  const recommended = (useCurated ? curated : bestSellers).filter((p) => p.id !== product.id);
+  const trending = inStock.filter((p) => p.id !== product.id);
   const related = sameCategory.filter((p) => p.id !== product.id);
 
   // shortDescription is admin rich text (HTML) — sanitize on the server and
@@ -202,11 +199,7 @@ export default async function ProductPage({ params }: PageProps) {
 
     {/* Post-review discovery sections (ProductCarousel brings its own
         max-w-7xl px-4 wrapper, so these sit outside the page container). */}
-    <ProductCarousel
-      title="Recommended for You"
-      products={recommended}
-      viewAllHref={useCurated ? "/category/recommended-for-you" : "/category/best-seller"}
-    />
+    <ProductCarousel title="Trending Products" products={trending} viewAllHref="/products" shuffle />
     {primaryCategory && (
       <ProductCarousel
         title="Related products"
