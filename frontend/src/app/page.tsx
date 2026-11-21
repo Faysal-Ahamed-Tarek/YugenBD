@@ -118,7 +118,7 @@ export default async function HomePage() {
       )}
 
       {trending.length > 0 && (
-        <ProductCarousel title="Trending Products" products={trending} viewAllHref="/products" shuffle />
+        <ProductCarousel title="Trending Products" products={trending} viewAllHref="/trending" shuffle />
       )}
 
       <ProductCarousel title="New Arrivals" products={newArrivals} viewAllHref="/category/new-arrival" />

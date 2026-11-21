@@ -199,7 +199,7 @@ export default async function ProductPage({ params }: PageProps) {
 
     {/* Post-review discovery sections (ProductCarousel brings its own
         max-w-7xl px-4 wrapper, so these sit outside the page container). */}
-    <ProductCarousel title="Trending Products" products={trending} viewAllHref="/products" shuffle />
+    <ProductCarousel title="Trending Products" products={trending} viewAllHref="/trending" shuffle />
     {primaryCategory && (
       <ProductCarousel
         title="Related products"
