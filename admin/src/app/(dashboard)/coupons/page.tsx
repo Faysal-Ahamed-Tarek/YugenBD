@@ -54,13 +54,9 @@ export default function CouponsPage() {
     { header: "Discount", cell: (c) => <span>{describeValue(c)}</span> },
     {
       header: "Conditions",
-      cell: (c) => {
-        const parts = [
-          c.minSubtotal ? `Min ${formatPrice(c.minSubtotal)}` : null,
-          c.maxDiscount ? `Max ${formatPrice(c.maxDiscount)}` : null,
-        ].filter(Boolean);
-        return <span className="text-muted">{parts.length ? parts.join(" · ") : "—"}</span>;
-      },
+      cell: (c) => (
+        <span className="text-muted">{c.minSubtotal ? `Min ${formatPrice(c.minSubtotal)}` : "—"}</span>
+      ),
     },
     {
       header: "Valid",
@@ -170,7 +166,6 @@ function CouponModal({
   const [type, setType] = useState<CouponType>(editing?.type ?? "percent");
   const [value, setValue] = useState(editing ? String(Number(editing.value)) : "");
   const [minSubtotal, setMinSubtotal] = useState(editing?.minSubtotal ? String(Number(editing.minSubtotal)) : "");
-  const [maxDiscount, setMaxDiscount] = useState(editing?.maxDiscount ? String(Number(editing.maxDiscount)) : "");
   const [startsAt, setStartsAt] = useState(toLocalInput(editing?.startsAt ?? null));
   const [endsAt, setEndsAt] = useState(toLocalInput(editing?.endsAt ?? null));
   const [usageLimit, setUsageLimit] = useState(editing?.usageLimit != null ? String(editing.usageLimit) : "");
@@ -200,7 +195,9 @@ function CouponModal({
         type,
         value: num,
         minSubtotal: optionalNumber(minSubtotal),
-        maxDiscount: optionalNumber(maxDiscount),
+        // No max-discount cap is managed from admin; clear any older value so
+        // a saved coupon always behaves exactly as the form shows it.
+        maxDiscount: null,
         startsAt: startsAt ? new Date(startsAt).toISOString() : null,
         endsAt: endsAt ? new Date(endsAt).toISOString() : null,
         usageLimit: usageLimit.trim() === "" ? null : parseInt(usageLimit, 10),
@@ -257,19 +254,17 @@ function CouponModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Min. subtotal (৳) <span className="font-normal text-muted">optional</span>
-            </label>
-            <input type="number" min={0} value={minSubtotal} onChange={(e) => setMinSubtotal(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Max. discount (৳) <span className="font-normal text-muted">optional</span>
-            </label>
-            <input type="number" min={0} value={maxDiscount} onChange={(e) => setMaxDiscount(e.target.value)} className={inputClass} />
-          </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            Min. subtotal (৳) <span className="font-normal text-muted">optional</span>
+          </label>
+          <input
+            type="number"
+            min={0}
+            value={minSubtotal}
+            onChange={(e) => setMinSubtotal(e.target.value)}
+            className={`${inputClass} max-w-40`}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
