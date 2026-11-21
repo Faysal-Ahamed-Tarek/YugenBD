@@ -8,6 +8,7 @@ export * from "./reviews";
 export * from "./concerns";
 export * from "./faq";
 export * from "./announcements";
+export * from "./coupons";
 export * from "./orders";
 export * from "./hero-slides";
 export * from "./shipment";

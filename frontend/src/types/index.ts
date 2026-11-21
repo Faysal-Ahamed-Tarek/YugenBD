@@ -193,6 +193,9 @@ export interface Order {
   deliveryFee: string;
   deliveryEstimate: string;
   subtotal: string;
+  /** Coupon snapshot — code as applied and the server-computed discount ("0.00" when none). */
+  couponCode: string | null;
+  discount: string;
   total: string;
   status: string;
   paymentMethod: PaymentMethod;
@@ -213,7 +216,17 @@ export interface CreateOrderPayload {
   paymentMethod: PaymentMethod;
   bkashTransactionId?: string;
   bkashAmount?: number;
+  /** Only the code — the server re-validates it and computes the discount. */
+  couponCode?: string;
   items: Array<{ productId: string; quantity: number }>;
+}
+
+/** POST /coupons/validate — checkout preview of a coupon's discount. */
+export interface CouponPreview {
+  code: string;
+  type: "percent" | "fixed";
+  value: string;
+  discount: string;
 }
 
 /** Lean shape served by GET /announcements — the scrolling promo bar. */

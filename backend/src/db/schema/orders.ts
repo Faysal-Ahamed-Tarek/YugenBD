@@ -19,6 +19,11 @@ export const orders = pgTable(
     deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 }).notNull(),
     deliveryEstimate: text("delivery_estimate").notNull(),
     subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
+    // Coupon snapshot: the code as applied and the discount the SERVER computed
+    // (item subtotal only — delivery is never discounted). total = subtotal -
+    // discount + deliveryFee. No FK, so deleting a coupon keeps history intact.
+    couponCode: varchar("coupon_code", { length: 40 }),
+    discount: numeric("discount", { precision: 10, scale: 2 }).notNull().default("0"),
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
     status: orderStatusEnum("status").notNull().default("pending"),
     // Payment: 'cod' (default) or 'bkash' manual Send Money reference. The

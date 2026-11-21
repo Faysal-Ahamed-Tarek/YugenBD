@@ -1,6 +1,8 @@
 import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client";
 import { orders, orderItems, products, productImages, users } from "../../db/schema";
+import { ApiError } from "../../utils/ApiError";
+import { couponRepository } from "../coupons/coupon.repository";
 import type { ListOrdersQuery, OrderStatus } from "./order.validators";
 
 type NewOrder = typeof orders.$inferInsert;
@@ -45,9 +47,15 @@ export const orderRepository = {
   async createWithItems(
     order: NewOrder,
     items: Omit<NewOrderItem, "orderId">[],
-    decrements: StockDecrement[] = []
+    decrements: StockDecrement[] = [],
+    couponId: string | null = null
   ) {
     return db.transaction(async (tx) => {
+      // Claim the coupon use first: the conditional UPDATE is the race-safe
+      // usage-limit check. Throwing here rolls back the whole order.
+      if (couponId && !(await couponRepository.redeem(tx, couponId))) {
+        throw ApiError.badRequest("This coupon is no longer available. Please remove it and try again.");
+      }
       const [created] = await tx.insert(orders).values(order).returning();
       const rows = await tx
         .insert(orderItems)

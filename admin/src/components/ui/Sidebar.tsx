@@ -28,6 +28,7 @@ const NAV: NavItem[] = [
   { label: "Categories", href: "/categories", icon: "M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z" },
   { label: "Concerns", href: "/concerns", icon: "M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" },
   { label: "Orders", href: "/orders", icon: "M6 7h12l1 13H5L6 7zM9 7V5a3 3 0 0 1 6 0v2" },
+  { label: "Coupons", href: "/coupons", icon: "M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4zM9 15l6-6M9.5 9.5h.01M14.5 14.5h.01" },
   { label: "Shipment", href: "/shipment", icon: "M3 7h11v8H3zM14 10h4l3 3v2h-7z M7 17.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2z M17 17.6a1.6 1.6 0 1 0 0-3.2 1.6 1.6 0 0 0 0 3.2z" },
   { label: "Delivery", href: "/delivery", icon: "M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0zM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" },
   { label: "Users", href: "/users", icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0" },

@@ -8,7 +8,7 @@ import { createOrder } from "@/lib/api";
 import { getFreshAccessToken, authApi } from "@/lib/authClient";
 import { useAuth } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
-import type { DeliveryZone, PaymentMethod, LocationOption, ShippingAddress } from "@/types";
+import type { DeliveryZone, PaymentMethod, LocationOption, ShippingAddress, CouponPreview } from "@/types";
 import ProductImage from "@/components/product/ProductImage";
 
 // Local Bangladeshi format for order-time phone capture: 01XXXXXXXXX (11 digits).
@@ -50,6 +50,32 @@ const DELIVERY_OPTIONS: {
  */
 const DEFAULT_FREE_DELIVERY_THRESHOLD = 3000;
 
+/**
+ * Coupon preview (POST /coupons/validate). Display only — POST /orders
+ * re-validates the code and computes the discount on the server.
+ */
+async function previewCoupon(
+  code: string,
+  subtotal: number
+): Promise<{ ok: true; coupon: CouponPreview } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`${API_URL}/coupons/validate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, subtotal }),
+    });
+    const json = (await res.json().catch(() => null)) as
+      | { success: boolean; data?: CouponPreview; message?: string; errors?: Record<string, string[]> }
+      | null;
+    if (res.status === 429) return { ok: false, error: "Too many attempts. Please wait a few minutes." };
+    if (res.ok && json?.success && json.data) return { ok: true, coupon: json.data };
+    const fieldError = json?.errors?.code?.[0];
+    return { ok: false, error: fieldError ?? json?.message ?? "This coupon code is not valid." };
+  } catch {
+    return { ok: false, error: "Network error. Please try again." };
+  }
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, status } = useAuth();
@@ -78,6 +104,10 @@ export default function CheckoutPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<CouponPreview | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   // Load cart and KEEP IT IN SYNC — the header cart sidebar can change
   // quantities/remove lines while checkout is open, and the summary, subtotal
@@ -193,6 +223,53 @@ export default function CheckoutPage() {
     [items]
   );
 
+  // Keep an applied coupon honest when the cart changes (sidebar edits): re-check
+  // it against the new subtotal and drop it with a message if it no longer fits.
+  const appliedCode = coupon?.code;
+  useEffect(() => {
+    if (!appliedCode) return;
+    let cancelled = false;
+    previewCoupon(appliedCode, subtotal).then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        setCoupon(result.coupon);
+      } else {
+        setCoupon(null);
+        setCouponError(result.error);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [subtotal, appliedCode]);
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) {
+      setCouponError("Enter a coupon code");
+      return;
+    }
+    setApplyingCoupon(true);
+    setCouponError(null);
+    const result = await previewCoupon(code, subtotal);
+    setApplyingCoupon(false);
+    if (result.ok) {
+      setCoupon(result.coupon);
+      setCouponInput("");
+    } else {
+      setCoupon(null);
+      setCouponError(result.error);
+    }
+  };
+
+  const removeCoupon = () => {
+    setCoupon(null);
+    setCouponError(null);
+  };
+
+  // Coupons discount the item subtotal only — never the delivery fee.
+  const discount = coupon ? parseFloat(coupon.discount) : 0;
+
   // Summary rows: quantities beyond stock show as a separate Pre-Order row of
   // the same product, mirroring the cart page and the final order lines.
   const summaryRows = splitCartRows(items, stock);
@@ -216,8 +293,7 @@ export default function CheckoutPage() {
   const derivedZone: DeliveryZone = divisionName === "Dhaka" ? "inside_dhaka" : "outside_dhaka";
   const effectiveZone: DeliveryZone | null = freeDelivery ? derivedZone : zone;
   const deliveryFee = freeDelivery ? 0 : selected?.fee ?? null;
-  const total =
-    deliveryFee !== null ? subtotal + deliveryFee : null;
+  const total = deliveryFee !== null ? subtotal - discount + deliveryFee : null;
   const districtName = districts.find((d) => d.id === districtId)?.name ?? "";
   const upazilaName = upazilas.find((u) => u.id === upazilaId)?.name ?? "";
   const locationChosen = Boolean(divisionId && districtId && upazilaId);
@@ -267,6 +343,7 @@ export default function CheckoutPage() {
         ...(paymentMethod === "bkash"
           ? { bkashTransactionId: bkashTxn.trim(), bkashAmount: bkashAmountNum }
           : {}),
+        ...(coupon ? { couponCode: coupon.code } : {}),
         items: items.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -553,11 +630,66 @@ export default function CheckoutPage() {
               ))}
             </ul>
 
+            <div className="mt-4 border-t border-border pt-4">
+              {coupon ? (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-primary bg-primary-light px-3 py-2 text-sm">
+                  <span>
+                    Coupon <strong className="text-primary">{coupon.code}</strong> applied
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeCoupon}
+                    className="text-xs font-semibold text-muted hover:text-primary transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    applyCoupon();
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    aria-label="Coupon code"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value.toUpperCase());
+                      if (couponError) setCouponError(null);
+                    }}
+                    maxLength={40}
+                    placeholder="Coupon code"
+                    className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 text-sm uppercase outline-none focus:border-primary focus:ring-2 focus:ring-primary-light transition"
+                  />
+                  <button
+                    type="submit"
+                    disabled={applyingCoupon}
+                    className="shrink-0 rounded-lg border border-primary px-4 text-sm font-semibold text-primary hover:bg-primary hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {applyingCoupon ? "Applying…" : "Apply"}
+                  </button>
+                </form>
+              )}
+              {couponError && (
+                <p role="alert" className="mt-1.5 text-xs text-primary">
+                  {couponError}
+                </p>
+              )}
+            </div>
+
             <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted">Subtotal</span>
                 <span className="font-semibold">{formatPrice(subtotal)}</span>
               </div>
+              {coupon && discount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted">Discount ({coupon.code})</span>
+                  <span className="font-semibold text-primary">−{formatPrice(discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-muted">Delivery</span>
                 <span className="font-semibold">

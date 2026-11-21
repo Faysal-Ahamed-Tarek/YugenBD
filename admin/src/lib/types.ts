@@ -146,6 +146,9 @@ export interface Order {
   deliveryFee: string;
   deliveryEstimate: string;
   subtotal: string;
+  /** Coupon snapshot — code as applied and the server-computed discount ("0.00" when none). */
+  couponCode: string | null;
+  discount: string;
   total: string;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
@@ -230,4 +233,23 @@ export interface Review {
   comment: string | null;
   product: { id: string; title: string; slug: string } | null;
   images: { id: string; imageUrl: string }[];
+}
+
+/** Admin-managed discount coupon — GET/POST/PATCH/DELETE /admin/coupons. */
+export type CouponType = "percent" | "fixed";
+export interface Coupon {
+  id: string;
+  code: string;
+  type: CouponType;
+  /** Percent (1–100) or BDT, as a numeric string. */
+  value: string;
+  minSubtotal: string | null;
+  maxDiscount: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  usageLimit: number | null;
+  usedCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

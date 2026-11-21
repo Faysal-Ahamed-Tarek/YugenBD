@@ -227,6 +227,19 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <span className="text-muted">Subtotal</span>
             <span className="font-semibold">{formatPrice(order.subtotal)}</span>
           </div>
+          {Number(order.discount) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted">
+                Discount
+                {order.couponCode && (
+                  <span className="ml-1.5 rounded bg-primary-light px-1.5 py-0.5 font-mono text-xs font-semibold text-primary">
+                    {order.couponCode}
+                  </span>
+                )}
+              </span>
+              <span className="font-semibold text-primary">−{formatPrice(order.discount)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted">Delivery</span>
             <span className="font-semibold">{formatPrice(order.deliveryFee)}</span>

@@ -186,6 +186,8 @@ export interface OrderNotification {
   deliveryZone: "inside_dhaka" | "outside_dhaka";
   deliveryFee: string;
   subtotal: string;
+  couponCode?: string | null;
+  discount?: string;
   total: string;
   paymentMethod: "cod" | "bkash";
   bkashTransactionId: string | null;
@@ -211,6 +213,9 @@ export async function sendNewOrderEmail(order: OrderNotification): Promise<void>
 
   const subject = `New order #${shortId} — ${taka(order.total)} · ${order.fullName}`;
 
+  // Coupon codes are validated to [A-Z0-9_-], so they're safe to inline in HTML.
+  const hasDiscount = Number(order.discount ?? 0) > 0;
+
   const lines = order.items.map(
     (i) => `- ${i.title}${i.isPreOrder ? " [PRE-ORDER]" : ""} × ${i.quantity} — ${taka(String(Number(i.price) * i.quantity))}`
   );
@@ -228,6 +233,7 @@ export async function sendNewOrderEmail(order: OrderNotification): Promise<void>
     ...lines,
     "",
     `Subtotal: ${taka(order.subtotal)}`,
+    ...(hasDiscount ? [`Discount: -${taka(order.discount!)}${order.couponCode ? ` (${order.couponCode})` : ""}`] : []),
     `Delivery: ${Number(order.deliveryFee) === 0 ? "Free" : taka(order.deliveryFee)}`,
     `Total:    ${taka(order.total)}`,
   ].join("\n");
@@ -263,6 +269,11 @@ export async function sendNewOrderEmail(order: OrderNotification): Promise<void>
       <table style="width:100%; font-size:14px; border-collapse:collapse; margin-top:20px;">
         ${rows}
         <tr><td style="padding-top:10px; color:#6b6b6b;">Subtotal</td><td></td><td style="padding-top:10px; text-align:right;">${taka(order.subtotal)}</td></tr>
+        ${
+          hasDiscount
+            ? `<tr><td style="color:#6b6b6b;">Discount${order.couponCode ? ` (${order.couponCode})` : ""}</td><td></td><td style="text-align:right;">-${taka(order.discount!)}</td></tr>`
+            : ""
+        }
         <tr><td style="color:#6b6b6b;">Delivery</td><td></td><td style="text-align:right;">${
           Number(order.deliveryFee) === 0 ? "Free" : taka(order.deliveryFee)
         }</td></tr>

@@ -586,6 +586,12 @@ function OrderHistory() {
                     <span className="text-muted">Subtotal ({itemCount} item{itemCount === 1 ? "" : "s"})</span>
                     <span className="font-medium">{taka(order.subtotal)}</span>
                   </div>
+                  {Number(order.discount) > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted">Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+                      <span className="font-medium text-primary">−{taka(order.discount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted">Delivery fee</span>
                     <span className="font-medium">{taka(order.deliveryFee)}</span>

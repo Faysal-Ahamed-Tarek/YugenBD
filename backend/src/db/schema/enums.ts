@@ -20,3 +20,5 @@ export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", 
 // The four fixed FAQ segments shown on the storefront Help Centre. Admins add
 // questions under each; the segment titles live in the apps (SEGMENTS const).
 export const faqSegmentEnum = pgEnum("faq_segment", ["products", "orders", "delivery", "returns"]);
+// Coupon discount type: a percentage of the item subtotal, or a fixed BDT amount.
+export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);

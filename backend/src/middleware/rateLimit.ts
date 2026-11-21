@@ -60,3 +60,10 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   limit: 5,
 });
+
+/** Coupon "Apply" at checkout — public, so limit code guessing per client IP. */
+export const couponValidateLimiter = rateLimit({
+  ...base,
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  limit: 30,
+});

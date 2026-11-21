@@ -247,6 +247,11 @@ export function streamOrderPdf(order: Order, stream: NodeJS.WritableStream) {
     doc.moveDown(0.5);
   };
   totalsRow("Subtotal", taka(order.subtotal));
+  if (Number(order.discount) > 0) {
+    // Long codes would collide with the value column, so clip them.
+    const code = order.couponCode && order.couponCode.length > 14 ? `${order.couponCode.slice(0, 13)}…` : order.couponCode;
+    totalsRow(`Discount${code ? ` (${code})` : ""}`, `- ${taka(order.discount)}`);
+  }
   totalsRow(`Delivery (${zoneLabel(order.deliveryZone)})`, taka(order.deliveryFee));
   totalsRow("Total", taka(order.total), true);
 

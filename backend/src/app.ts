@@ -22,6 +22,8 @@ import addressRoutes from "./modules/addresses/address.routes";
 import adminUserRoutes from "./modules/users/user.routes";
 import shipmentRoutes from "./modules/shipment/shipment.routes";
 import deliveryRoutes from "./modules/delivery/delivery.routes";
+import couponRoutes from "./modules/coupons/coupon.routes";
+import adminCouponRoutes from "./modules/coupons/coupon.admin.routes";
 
 const app = express();
 
@@ -63,6 +65,8 @@ app.use("/api/v1/admin/dashboard", dashboardRoutes);
 app.use("/api/v1/admin/users", adminUserRoutes);
 app.use("/api/v1/shipment", shipmentRoutes);
 app.use("/api/v1/delivery", deliveryRoutes);
+app.use("/api/v1/coupons", couponRoutes);
+app.use("/api/v1/admin/coupons", adminCouponRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

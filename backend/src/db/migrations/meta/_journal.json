@@ -190,6 +190,13 @@
       "when": 1792689923465,
       "tag": "0026_home_product_sections",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1795248251158,
+      "tag": "0027_coupons",
+      "breakpoints": true
     }
   ]
 }

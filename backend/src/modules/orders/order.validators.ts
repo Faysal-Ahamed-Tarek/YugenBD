@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { couponCodeSchema } from "../coupons/coupon.validators";
 
 // Order-time phone capture uses the LOCAL Bangladeshi format 01XXXXXXXXX
 // (exactly 11 digits, starts with 01). This is intentionally scoped to orders;
@@ -24,6 +25,9 @@ export const createOrderSchema = z
     paymentMethod: z.enum(["bkash", "cod"]).default("cod"),
     bkashTransactionId: z.string().trim().min(4, "Enter the bKash transaction ID").max(50).optional(),
     bkashAmount: z.number().positive("Enter the amount you sent").optional(),
+    // Optional coupon. Only the CODE is accepted — the server re-validates it
+    // and computes the discount itself; a client-sent amount is never trusted.
+    couponCode: couponCodeSchema.optional(),
     items: z.array(orderItemSchema).min(1, "Your cart is empty"),
   })
   .refine((data) => data.paymentMethod !== "bkash" || !!data.bkashTransactionId, {

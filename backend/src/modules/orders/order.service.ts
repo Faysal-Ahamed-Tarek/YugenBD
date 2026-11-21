@@ -2,6 +2,7 @@ import { ApiError } from "../../utils/ApiError";
 import { sendNewOrderEmail } from "../../config/mailer";
 import { locationRepository } from "../locations/location.repository";
 import { deliveryService } from "../delivery/delivery.service";
+import { couponService } from "../coupons/coupon.service";
 import { orderRepository } from "./order.repository";
 import type { CreateOrderInput, CreateManualOrderInput, ListOrdersQuery, OrderStatus } from "./order.validators";
 
@@ -78,6 +79,7 @@ async function buildAndInsertOrder(
   input: Omit<CreateManualOrderInput, "status" | "address" | "freeDelivery"> & {
     address: string;
     freeDelivery?: boolean;
+    couponCode?: string;
   },
   status: OrderStatus = "pending",
   userId: string | null = null
@@ -135,7 +137,14 @@ async function buildAndInsertOrder(
     input.freeDelivery || (alwaysFree && userId !== null) || subtotal >= freeDeliveryThreshold
       ? 0
       : zoneFee;
-  const total = subtotal + fee;
+
+  // Coupon: re-validated and priced on the server from the authoritative
+  // subtotal. It discounts the ITEMS only — the delivery fee is never
+  // discounted, and the free-delivery threshold above is judged on the
+  // pre-discount subtotal (a coupon never makes delivery cost money).
+  const applied = input.couponCode ? await couponService.resolveForOrder(input.couponCode, subtotal) : null;
+  const discount = applied?.discount ?? 0;
+  const total = subtotal - discount + fee;
 
   const isBkash = input.paymentMethod === "bkash";
 
@@ -159,6 +168,8 @@ async function buildAndInsertOrder(
       deliveryFee: money(fee),
       deliveryEstimate: estimate,
       subtotal: money(subtotal),
+      couponCode: applied?.coupon.code ?? null,
+      discount: money(discount),
       total: money(total),
       status,
       paymentMethod: input.paymentMethod,
@@ -167,7 +178,8 @@ async function buildAndInsertOrder(
       paymentStatus: "pending",
     },
     lineItems.map(({ lineTotal, ...item }) => item),
-    decrements
+    decrements,
+    applied?.coupon.id ?? null
   );
 }
 

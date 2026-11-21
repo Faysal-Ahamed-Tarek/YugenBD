@@ -80,6 +80,12 @@ export default async function OrderConfirmationPage({ params }: PageProps) {
             <span className="text-muted">Subtotal</span>
             <span className="font-semibold">{formatPrice(order.subtotal)}</span>
           </div>
+          {Number(order.discount) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted">Discount{order.couponCode ? ` (${order.couponCode})` : ""}</span>
+              <span className="font-semibold text-primary">−{formatPrice(order.discount)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-muted">
               Delivery — {ZONE_LABEL[order.deliveryZone] ?? order.deliveryZone} ({order.deliveryEstimate})
