@@ -26,6 +26,13 @@ export const metadata: Metadata = {
     template: "%s | YugenBD",
   },
   description: DEFAULT_DESCRIPTION,
+  // Let Google show a large image thumbnail and the full meta description in
+  // results. Pages that set their own `robots` (noindex ones) replace this.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  },
   // Inherited by every page that does not declare its own `openGraph`, so a
   // link shared to Messenger / WhatsApp / Facebook always carries the brand
   // card. Pages with a better image (products, concerns) override it.

@@ -4,7 +4,7 @@ import type { Product } from "@/types";
 import HeroSlider from "@/components/home/HeroSlider";
 import ShopByConcern from "@/components/home/ShopByConcern";
 import ProductCarousel from "@/components/product/ProductCarousel";
-import { socialMeta } from "@/lib/seo";
+import { socialMeta, OG_IMAGE } from "@/lib/seo";
 
 const HOME_TITLE = "YugenBD — Nourish.Renew.Glow";
 const HOME_DESCRIPTION =
@@ -60,7 +60,25 @@ function buildJsonLd(newArrivals: Product[]) {
     })),
   };
 
-  return [organization, itemList];
+  // The home page's featured image, declared for search engines (Google uses
+  // structured data, not og:image, when picking a result thumbnail).
+  const featuredImage = `${SITE_URL}${OG_IMAGE.url}`;
+  const webPage = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: SITE_URL,
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: featuredImage,
+      width: OG_IMAGE.width,
+      height: OG_IMAGE.height,
+    },
+    image: featuredImage,
+  };
+
+  return [organization, webPage, itemList];
 }
 
 export default async function HomePage() {

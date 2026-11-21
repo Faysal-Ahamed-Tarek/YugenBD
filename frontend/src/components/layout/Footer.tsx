@@ -69,7 +69,8 @@ export default function Footer({ announcements = [] }: { announcements?: Announc
 
           {/* Announcements — the same active rows the marquee scrolls */}
           {announcements.length > 0 && (
-            <div>
+            // Kept out of Google snippets, like the marquee (data-nosnippet).
+            <div data-nosnippet>
               <p className="text-sm font-semibold uppercase tracking-wider mb-3">Announcements</p>
               <ul className="space-y-2.5">
                 {announcements.map((announcement) => (

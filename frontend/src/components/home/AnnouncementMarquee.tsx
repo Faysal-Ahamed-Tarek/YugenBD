@@ -30,7 +30,9 @@ export default function AnnouncementMarquee({ items }: { items: Announcement[] }
   );
 
   return (
-    <section aria-label="Announcements" className="ymq-bar">
+    // data-nosnippet: promo text changes often and must never become the
+    // Google search snippet in place of the page's meta description.
+    <section aria-label="Announcements" className="ymq-bar" data-nosnippet>
       <style>{marqueeCss}</style>
       {/* Soft fade at both edges so text enters/exits gracefully */}
       <span className="ymq-fade ymq-fade-left" aria-hidden />
