@@ -13,8 +13,8 @@ export default function CustomerReviews({ reviews }: { reviews: FeaturedReview[]
   if (items.length === 0) return null;
 
   return (
-    <section aria-labelledby="customer-reviews-title" className="mt-8 md:mt-12 bg-primary-light">
-      <div className="mx-auto max-w-7xl px-4 py-10 md:py-14">
+    <section aria-labelledby="customer-reviews-title" className="mt-4 md:mt-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:py-10">
         <div className="mb-6 md:mb-8 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Customer Reviews</p>
           <h2 id="customer-reviews-title" className="mt-2 text-2xl md:text-3xl font-semibold text-foreground">

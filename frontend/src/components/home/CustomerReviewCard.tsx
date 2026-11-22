@@ -9,8 +9,8 @@ import Lightbox from "@/components/ui/Lightbox";
 
 /** Text longer than this gets clamped with a "Read more" toggle. */
 const CLAMP_AT = 180;
-/** Thumbnails shown on the card; the last one carries "+N" for the rest. */
-const MAX_THUMBS = 4;
+/** Photos shown on the card (one row); the last one carries "+N" for the rest. */
+const MAX_THUMBS = 3;
 
 function Star({ filled }: { filled: boolean }) {
   return (
@@ -55,7 +55,7 @@ export default function CustomerReviewCard({ review }: { review: FeaturedReview 
   );
 
   return (
-    <article className="relative flex h-full flex-col rounded-2xl border border-border bg-background p-5 md:p-6 shadow-sm">
+    <article className="relative flex h-full flex-col rounded-2xl border border-border bg-background p-4 sm:p-5 md:p-6 shadow-[0_4px_20px_-8px_rgb(0_0_0/0.12)]">
       {/* Decorative quote mark */}
       <svg className="absolute right-5 top-5 text-primary-light" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M9.6 6C6.5 7.3 4.5 10 4.5 13.4V18h5.6v-5.6H7.3c.1-2 1.3-3.6 3.2-4.5L9.6 6zm9 0c-3.1 1.3-5.1 4-5.1 7.4V18h5.6v-5.6h-2.8c.1-2 1.3-3.6 3.2-4.5L18.6 6z" />
@@ -85,7 +85,7 @@ export default function CustomerReviewCard({ review }: { review: FeaturedReview 
       )}
 
       {thumbs.length > 0 && (
-        <ul className="mt-4 flex gap-2" aria-label={`Photos from ${review.name}`}>
+        <ul className="mt-4 grid grid-cols-3 gap-2" aria-label={`Photos from ${review.name}`}>
           {thumbs.map((img, i) => {
             const isLast = i === thumbs.length - 1 && hidden > 0;
             return (
@@ -94,11 +94,11 @@ export default function CustomerReviewCard({ review }: { review: FeaturedReview 
                   type="button"
                   onClick={() => setOpenIndex(i)}
                   aria-label={isLast ? `View all ${images.length} photos` : `View photo ${i + 1}`}
-                  className="group relative block h-16 w-16 overflow-hidden rounded-lg bg-surface ring-1 ring-border hover:ring-primary transition-all"
+                  className="group relative block aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-surface ring-1 ring-border hover:ring-primary transition-all"
                 >
-                  <ProductImage src={img.imageUrl} alt={`Photo ${i + 1} from ${review.name}'s review`} sizes="64px" />
+                  <ProductImage src={img.imageUrl} alt={`Photo ${i + 1} from ${review.name}'s review`} sizes="(max-width: 640px) 28vw, (max-width: 1024px) 15vw, 120px" />
                   {isLast && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-foreground/55 text-sm font-semibold text-background">
+                    <span className="absolute inset-0 flex items-center justify-center bg-foreground/55 text-lg font-semibold text-background">
                       +{hidden}
                     </span>
                   )}
@@ -127,9 +127,7 @@ export default function CustomerReviewCard({ review }: { review: FeaturedReview 
             >
               on {review.product.title}
             </Link>
-          ) : (
-            <p className="text-xs text-muted">{review.verified ? "Verified buyer" : "Customer"}</p>
-          )}
+          ) : null}
         </div>
       </div>
 

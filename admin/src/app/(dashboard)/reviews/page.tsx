@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { formatDate, REVIEW_STATUSES, REVIEW_STATUS_STYLES } from "@/lib/format";
-import type { Product, Review, ReviewStatus } from "@/lib/types";
+import type { Review, ReviewStatus } from "@/lib/types";
 import AdminTable, { type Column } from "@/components/ui/AdminTable";
 import Modal from "@/components/ui/Modal";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -266,8 +266,8 @@ const toEditable = (urls: string[]): EditableImage[] =>
 
 /**
  * Create / edit review content: reviewer name + photo, stars, text, ordered
- * review photos, the product it's about (optional — blank = shop review) and
- * the home-slider flag. Images go through the shared /uploads endpoint; on
+ * review photos and the home-slider flag. New admin reviews are shop reviews
+ * (no product); editing a product review leaves its product untouched. Images go through the shared /uploads endpoint; on
  * save the full ordered image list is sent and replaces the review's images.
  */
 function ReviewFormModal({
@@ -279,9 +279,6 @@ function ReviewFormModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [product, setProduct] = useState<{ id: string; title: string } | null>(review?.product ?? null);
-  const [search, setSearch] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
   const [name, setName] = useState(review?.name ?? "");
   const [reviewerImageUrl, setReviewerImageUrl] = useState<string | null>(review?.reviewerImageUrl ?? null);
   const [rating, setRating] = useState(review?.rating ?? 5);
@@ -292,15 +289,6 @@ function ReviewFormModal({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(async () => {
-      if (search.trim().length < 1) return setResults([]);
-      const res = await api.get<Product[]>(`/products?q=${encodeURIComponent(search)}&limit=8`);
-      setResults(res.data);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const save = async () => {
     setError(null);
     if (name.trim().length < 2) return setError("Enter a reviewer name.");
@@ -310,7 +298,6 @@ function ReviewFormModal({
     if (order !== null && (!Number.isInteger(order) || order < 0)) return setError("Slider position must be a whole number.");
     setSaving(true);
     const body = {
-      productId: product?.id ?? null,
       name: name.trim(),
       reviewerImageUrl,
       rating,
@@ -376,49 +363,6 @@ function ReviewFormModal({
         <div>
           <label className="block text-sm font-medium mb-1.5">Review photos (optional, up to 10)</label>
           <ImageUploader images={images} onChange={setImages} folder="reviews" showMain={false} />
-        </div>
-
-        {/* Product picker — optional */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">
-            Product <span className="font-normal text-muted">(optional — leave empty for a general shop review)</span>
-          </label>
-          {product ? (
-            <div className="flex items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-sm">
-              <span className="font-medium">{product.title}</span>
-              <button type="button" onClick={() => setProduct(null)} className="text-muted hover:text-primary">
-                Remove
-              </button>
-            </div>
-          ) : (
-            <div className="relative">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products…"
-                className={inputClass}
-              />
-              {results.length > 0 && (
-                <ul className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-background shadow-lg max-h-52 overflow-y-auto">
-                  {results.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProduct(p);
-                          setSearch("");
-                          setResults([]);
-                        }}
-                        className="block w-full px-3 py-2 text-left text-sm hover:bg-surface"
-                      >
-                        {p.title}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Home slider */}
