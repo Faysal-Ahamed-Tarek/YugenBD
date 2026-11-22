@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { getProducts, getConcerns, getHeroSlides } from "@/lib/api";
+import { getProducts, getConcerns, getHeroSlides, getFeaturedReviews } from "@/lib/api";
 import type { Product } from "@/types";
 import HeroSlider from "@/components/home/HeroSlider";
 import ShopByConcern from "@/components/home/ShopByConcern";
+import CustomerReviews from "@/components/home/CustomerReviews";
 import ProductCarousel from "@/components/product/ProductCarousel";
 import { socialMeta, OG_IMAGE } from "@/lib/seo";
 
@@ -84,7 +85,7 @@ function buildJsonLd(newArrivals: Product[]) {
 export default async function HomePage() {
   // All sections fetched in parallel on the server; the page is served as
   // static HTML with 5-minute ISR revalidation.
-  const [newArrivals, skincare, haircare, makeup, concerns, heroSlides, bestSellers, trending] = await Promise.all([
+  const [newArrivals, skincare, haircare, makeup, concerns, heroSlides, bestSellers, trending, featuredReviews] = await Promise.all([
     getProducts({ sort: "newest", limit: 8 }),
     getProducts({ categorySlug: "skincare", limit: 8 }),
     getProducts({ categorySlug: "haircare", limit: 8 }),
@@ -93,6 +94,7 @@ export default async function HomePage() {
     getHeroSlides(),
     getProducts({ categorySlug: "best-seller", limit: 8 }),
     getProducts({ inStock: true, limit: 100 }),
+    getFeaturedReviews(),
   ]);
   // Trending = every in-stock product; the carousel shows 8 at random.
 
@@ -122,6 +124,9 @@ export default async function HomePage() {
       )}
 
       <ProductCarousel title="New Arrivals" products={newArrivals} viewAllHref="/category/new-arrival" />
+
+      {/* Last section — sits directly above the footer. */}
+      <CustomerReviews reviews={featuredReviews} />
     </>
   );
 }

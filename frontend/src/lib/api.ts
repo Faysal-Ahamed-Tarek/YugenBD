@@ -1,4 +1,5 @@
 import type {
+  FeaturedReview,
   ApiResponse,
   Category,
   Concern,
@@ -55,6 +56,11 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getHeroSlides(): Promise<HeroSlide[]> {
   return (await apiGet<HeroSlide[]>("/hero-slides")) ?? [];
+}
+
+/** Up to 8 reviews for the home slider (featured first, topped up with latest 4★+). */
+export async function getFeaturedReviews(): Promise<FeaturedReview[]> {
+  return (await apiGet<FeaturedReview[]>("/reviews/featured")) ?? [];
 }
 
 export async function getFaqs(): Promise<FaqItem[]> {

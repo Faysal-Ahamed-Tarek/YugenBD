@@ -23,12 +23,15 @@ export default function ImageUploader({
   productId,
   onRefresh,
   folder = "products",
+  showMain = true,
 }: {
   images: EditableImage[];
   onChange?: (images: EditableImage[]) => void;
   productId?: string;
   onRefresh?: () => void;
   folder?: string;
+  /** Show the "Main" badge / "Set main" control (off for review photos). */
+  showMain?: boolean;
 }) {
   const managed = Boolean(productId);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +117,7 @@ export default function ImageUploader({
           <div key={img.id ?? img.imageUrl} className="relative w-24">
             <div className="relative h-24 w-24 overflow-hidden rounded-lg border border-border bg-surface">
               <Image src={img.imageUrl} alt="" fill sizes="96px" className="object-cover" />
-              {img.isMain && (
+              {showMain && img.isMain && (
                 <span className="absolute top-1 left-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold text-white">
                   Main
                 </span>
@@ -124,7 +127,7 @@ export default function ImageUploader({
               <button type="button" aria-label="Move left" onClick={() => move(index, -1)} className="hover:text-primary disabled:opacity-30" disabled={index === 0}>
                 ‹
               </button>
-              {!img.isMain && (
+              {showMain && !img.isMain && (
                 <button type="button" onClick={() => setMain(img)} className="text-[11px] hover:text-primary">
                   Set main
                 </button>

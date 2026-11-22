@@ -231,6 +231,11 @@ export interface Review {
   status: ReviewStatus;
   date: string;
   comment: string | null;
+  reviewerImageUrl: string | null;
+  /** Shown in the storefront home "customer reviews" slider. */
+  isFeatured: boolean;
+  /** Slider position (ascending, blanks last). */
+  featuredOrder: number | null;
   product: { id: string; title: string; slug: string } | null;
   images: { id: string; imageUrl: string }[];
 }

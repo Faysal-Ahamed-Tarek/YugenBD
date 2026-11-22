@@ -1,7 +1,20 @@
-import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
 import { db } from "../../db/client";
 import { reviews, reviewImages, products } from "../../db/schema";
-import type { AdminListReviewsQuery, CreateReviewInput } from "./review.validators";
+import type {
+  AdminCreateReviewInput,
+  AdminListReviewsQuery,
+  AdminUpdateReviewInput,
+  CreateReviewInput,
+} from "./review.validators";
+
+// Review photos always come back in their admin-chosen order.
+const orderedImages = {
+  orderBy: [asc(reviewImages.sortOrder), asc(reviewImages.id)],
+};
+const productSummary = { columns: { id: true, title: true, slug: true } } as {
+  columns: { id: true; title: true; slug: true };
+};
 
 export const reviewRepository = {
   /** Storefront reviews for a product — APPROVED only, newest first, with images. */
@@ -10,8 +23,41 @@ export const reviewRepository = {
       where: and(eq(reviews.productId, productId), eq(reviews.status, "approved")),
       orderBy: desc(reviews.date),
       with: {
-        images: true,
+        images: orderedImages,
       },
+    });
+  },
+
+  /** Featured + approved reviews for the home slider, in admin order. */
+  findFeatured(limit: number) {
+    return db.query.reviews.findMany({
+      where: and(eq(reviews.isFeatured, true), eq(reviews.status, "approved")),
+      orderBy: [sql`${reviews.featuredOrder} ASC NULLS LAST`, desc(reviews.date)],
+      limit,
+      with: { images: orderedImages, product: productSummary },
+    });
+  },
+
+  /** Fallback filler for the slider: latest approved 4★+ reviews with text. */
+  findLatestPositive(limit: number, excludeIds: string[]) {
+    const conditions = [
+      eq(reviews.status, "approved"),
+      gte(reviews.rating, 4),
+      sql`coalesce(length(${reviews.comment}), 0) > 0`,
+    ];
+    if (excludeIds.length > 0) conditions.push(notInArray(reviews.id, excludeIds));
+    return db.query.reviews.findMany({
+      where: and(...conditions),
+      orderBy: desc(reviews.date),
+      limit,
+      with: { images: orderedImages, product: productSummary },
+    });
+  },
+
+  findByIdWithRelations(id: string) {
+    return db.query.reviews.findFirst({
+      where: eq(reviews.id, id),
+      with: { images: orderedImages, product: productSummary },
     });
   },
 
@@ -41,22 +87,47 @@ export const reviewRepository = {
 
   /**
    * Admin-authored review — created 'approved' (no moderation needed) and
-   * verified = true (reasonable default for shop-added reviews).
+   * verified = true, with its ordered images, in one transaction.
    */
-  createByAdmin(input: CreateReviewInput) {
-    return db
-      .insert(reviews)
-      .values({
-        productId: input.productId,
-        userId: null,
-        name: input.name,
-        rating: input.rating,
-        comment: input.comment,
-        verified: true,
-        status: "approved",
-      })
-      .returning()
-      .then((rows) => rows[0]);
+  createByAdmin(input: AdminCreateReviewInput) {
+    const { images, ...fields } = input;
+    return db.transaction(async (tx) => {
+      const [review] = await tx
+        .insert(reviews)
+        .values({ ...fields, userId: null, verified: true, status: "approved" })
+        .returning();
+      if (images.length > 0) {
+        await tx
+          .insert(reviewImages)
+          .values(images.map((imageUrl, sortOrder) => ({ reviewId: review.id, imageUrl, sortOrder })));
+      }
+      return review;
+    });
+  },
+
+  /**
+   * Update admin-editable content. When `images` is present it replaces the
+   * review's images wholesale (delete + insert in list order). Returns null
+   * when the review doesn't exist.
+   */
+  updateContent(id: string, input: AdminUpdateReviewInput) {
+    const { images, ...fields } = input;
+    return db.transaction(async (tx) => {
+      const [review] =
+        Object.keys(fields).length > 0
+          ? await tx.update(reviews).set(fields).where(eq(reviews.id, id)).returning()
+          : await tx.select().from(reviews).where(eq(reviews.id, id));
+      if (!review) return null;
+      if (images) {
+        await tx.delete(reviewImages).where(eq(reviewImages.reviewId, id));
+        if (images.length > 0) {
+          await tx
+            .insert(reviewImages)
+            .values(images.map((imageUrl, sortOrder) => ({ reviewId: id, imageUrl, sortOrder })));
+        }
+      }
+      return review;
+    });
   },
 
   addImage(reviewId: string, imageUrl: string) {
@@ -100,8 +171,8 @@ export const reviewRepository = {
         limit: query.limit,
         offset,
         with: {
-          images: true,
-          product: { columns: { id: true, title: true, slug: true } },
+          images: orderedImages,
+          product: productSummary,
         },
       }),
       db.select({ count: sql<number>`count(*)::int` }).from(reviews).where(where),

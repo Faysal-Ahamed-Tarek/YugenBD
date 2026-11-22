@@ -114,7 +114,13 @@ export interface Review {
   verified: boolean;
   date: string;
   comment: string | null;
+  reviewerImageUrl: string | null;
   images: ReviewImage[];
+}
+
+/** Home-page customer-reviews slider entry (GET /reviews/featured). */
+export interface FeaturedReview extends Review {
+  product: { title: string; slug: string } | null;
 }
 
 /** Shop-by-concern card: concern image/title linking to one representative product. */

@@ -1,6 +1,14 @@
 import { ApiError } from "../../utils/ApiError";
 import { reviewRepository } from "./review.repository";
-import type { AdminListReviewsQuery, CreateReviewInput } from "./review.validators";
+import type {
+  AdminCreateReviewInput,
+  AdminListReviewsQuery,
+  AdminUpdateReviewInput,
+  CreateReviewInput,
+} from "./review.validators";
+
+/** How many reviews the home-page slider shows. */
+const SLIDER_SIZE = 8;
 
 type ReviewRow = Awaited<ReturnType<typeof reviewRepository.findByProductId>>[number];
 
@@ -13,7 +21,18 @@ function toDto(review: ReviewRow | Omit<ReviewRow, "images">, images: { id: stri
     verified: review.verified,
     date: review.date,
     comment: review.comment,
+    reviewerImageUrl: review.reviewerImageUrl,
     images: images.map((image) => ({ id: image.id, imageUrl: image.imageUrl })),
+  };
+}
+
+type FeaturedReviewRow = Awaited<ReturnType<typeof reviewRepository.findFeatured>>[number];
+
+/** Home slider DTO — public fields plus the product the review is about. */
+function toFeaturedDto(review: FeaturedReviewRow) {
+  return {
+    ...toDto(review, review.images),
+    product: review.product ? { title: review.product.title, slug: review.product.slug } : null,
   };
 }
 
@@ -29,6 +48,9 @@ function toAdminDto(review: AdminReviewRow) {
     status: review.status,
     date: review.date,
     comment: review.comment,
+    reviewerImageUrl: review.reviewerImageUrl,
+    isFeatured: review.isFeatured,
+    featuredOrder: review.featuredOrder,
     product: review.product
       ? { id: review.product.id, title: review.product.title, slug: review.product.slug }
       : null,
@@ -88,13 +110,46 @@ export const reviewService = {
     return deleted;
   },
 
-  /** Admin-authored review — created approved + verified, visible immediately. */
-  async createByAdmin(input: CreateReviewInput, imageUrl?: string) {
-    const product = await reviewRepository.findProduct(input.productId);
-    if (!product) throw ApiError.notFound("Product not found");
+  /**
+   * Home slider: featured approved reviews in admin order; if fewer than 8 are
+   * featured, top up with the latest approved 4★+ reviews that have text.
+   */
+  async listFeatured() {
+    const featured = await reviewRepository.findFeatured(SLIDER_SIZE);
+    const filler =
+      featured.length < SLIDER_SIZE
+        ? await reviewRepository.findLatestPositive(
+            SLIDER_SIZE - featured.length,
+            featured.map((r) => r.id)
+          )
+        : [];
+    return [...featured, ...filler].map(toFeaturedDto);
+  },
 
+  async assertProductExists(productId: string | null | undefined) {
+    if (!productId) return;
+    const product = await reviewRepository.findProduct(productId);
+    if (!product) throw ApiError.notFound("Product not found");
+  },
+
+  /** Admin-authored review — created approved + verified, visible immediately. */
+  async createByAdmin(input: AdminCreateReviewInput) {
+    await this.assertProductExists(input.productId);
     const review = await reviewRepository.createByAdmin(input);
-    if (imageUrl) await reviewRepository.addImage(review.id, imageUrl);
-    return review;
+    return this.adminGet(review.id);
+  },
+
+  /** Edit an existing review's content (any review, guest or admin-authored). */
+  async update(id: string, input: AdminUpdateReviewInput) {
+    await this.assertProductExists(input.productId);
+    const updated = await reviewRepository.updateContent(id, input);
+    if (!updated) throw ApiError.notFound("Review not found");
+    return this.adminGet(id);
+  },
+
+  async adminGet(id: string) {
+    const review = await reviewRepository.findByIdWithRelations(id);
+    if (!review) throw ApiError.notFound("Review not found");
+    return toAdminDto(review);
   },
 };

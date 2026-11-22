@@ -6,6 +6,7 @@ import {
   createReviewSchema,
   adminListReviewsQuerySchema,
   adminCreateReviewSchema,
+  adminUpdateReviewSchema,
   updateReviewStatusSchema,
   reviewIdParamSchema,
 } from "./review.validators";
@@ -52,7 +53,19 @@ export async function deleteReview(req: Request, res: Response) {
 }
 
 export async function createAdminReview(req: Request, res: Response) {
-  const { imageUrl, ...input } = adminCreateReviewSchema.parse(req.body);
-  const review = await reviewService.createByAdmin(input, imageUrl);
+  const input = adminCreateReviewSchema.parse(req.body);
+  const review = await reviewService.createByAdmin(input);
   sendSuccess(res, review, 201);
+}
+
+export async function updateAdminReview(req: Request, res: Response) {
+  const { id } = reviewIdParamSchema.parse(req.params);
+  const input = adminUpdateReviewSchema.parse(req.body);
+  const review = await reviewService.update(id, input);
+  sendSuccess(res, review);
+}
+
+export async function listFeaturedReviews(_req: Request, res: Response) {
+  const reviews = await reviewService.listFeatured();
+  sendSuccess(res, reviews);
 }

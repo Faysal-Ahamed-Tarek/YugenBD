@@ -26,10 +26,8 @@ function formatDate(value: string) {
   });
 }
 
-/** One review row: stars + date, avatar + name, comment, optional photo. */
+/** One review row: stars + date, avatar + name, comment, optional photos. */
 export default function ReviewCard({ review }: { review: Review }) {
-  const photo = review.images[0] ?? null;
-
   return (
     <article className="border-b border-border py-6 last:border-b-0">
       {/* Stars + date */}
@@ -72,9 +70,13 @@ export default function ReviewCard({ review }: { review: Review }) {
         <p className="mt-3 text-sm leading-relaxed text-foreground">{review.comment}</p>
       )}
 
-      {/* Photo thumbnail — click to open lightbox */}
-      {photo && (
-        <ReviewImageThumb src={photo.imageUrl} alt={`Photo from ${review.name}'s review`} />
+      {/* Photo thumbnails — click to open lightbox */}
+      {review.images.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {review.images.map((photo) => (
+            <ReviewImageThumb key={photo.id} src={photo.imageUrl} alt={`Photo from ${review.name}'s review`} />
+          ))}
+        </div>
       )}
     </article>
   );

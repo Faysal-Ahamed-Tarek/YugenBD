@@ -5,6 +5,7 @@ import {
   adminListReviews,
   updateReviewStatus,
   createAdminReview,
+  updateAdminReview,
   deleteReview,
 } from "./review.controller";
 
@@ -15,8 +16,9 @@ router.use(requireAuth, requireRole("admin"));
 
 router.get("/", asyncHandler(adminListReviews));
 router.patch("/:id/status", asyncHandler(updateReviewStatus));
-// Admin-authored review (JSON; optional imageUrl from the uploads flow).
+// Admin-authored review content (JSON; image URLs come from the uploads flow).
 router.post("/", asyncHandler(createAdminReview));
+router.patch("/:id", asyncHandler(updateAdminReview));
 // Permanent delete (images cascade) — distinct from rejecting, which keeps the row.
 router.delete("/:id", asyncHandler(deleteReview));
 
