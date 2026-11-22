@@ -20,9 +20,6 @@ export default function CustomerReviews({ reviews }: { reviews: FeaturedReview[]
           <h2 id="customer-reviews-title" className="mt-2 text-2xl md:text-3xl font-semibold text-foreground">
             What Our Customers Say
           </h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-muted">
-            Real words and real photos from people who glow with YugenBD.
-          </p>
         </div>
 
         <Carousel
