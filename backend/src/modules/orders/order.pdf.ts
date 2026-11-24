@@ -103,9 +103,85 @@ function drawWatermark(doc: PDFKit.PDFDocument) {
   doc.opacity(1);
 }
 
+// ---- Item thumbnails -------------------------------------------------------
+
+const THUMB = 30;
+const IMAGE_TIMEOUT_MS = 4000;
+
+/**
+ * pdfkit only embeds PNG/JPEG. Cloudinary URLs are rewritten to a small JPEG
+ * thumbnail (so WebP/AVIF uploads still work and the PDF stays light); other
+ * hosts are fetched as-is and kept only if they really are PNG/JPEG.
+ */
+function thumbnailUrl(url: string) {
+  return url.includes("res.cloudinary.com") && url.includes("/upload/")
+    ? url.replace("/upload/", "/upload/f_jpg,q_80,w_120,h_120,c_pad,b_white/")
+    : url;
+}
+
+function isPngOrJpeg(buf: Buffer) {
+  const png = buf.length > 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  const jpeg = buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  return png || jpeg;
+}
+
+async function fetchImage(url: string): Promise<Buffer | null> {
+  try {
+    const res = await fetch(thumbnailUrl(url), { signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS) });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return isPngOrJpeg(buf) ? buf : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Download every distinct line image up front (pdfkit draws synchronously).
+ * Never throws: a missing, slow or broken image just falls back to the icon.
+ */
+async function loadItemImages(order: Order) {
+  const urls = [...new Set(order.items.map((item) => item.imageUrl).filter((u): u is string => !!u))];
+  const entries = await Promise.all(urls.map(async (url) => [url, await fetchImage(url)] as const));
+  return new Map(entries);
+}
+
+/** Thumbnail cell: the product photo, or a neutral bag icon (custom lines, missing images). */
+function drawThumb(doc: PDFKit.PDFDocument, image: Buffer | null | undefined, x: number, y: number) {
+  doc.save();
+  doc.roundedRect(x, y, THUMB, THUMB, 4).clip();
+  if (image) {
+    doc.rect(x, y, THUMB, THUMB).fill(WHITE);
+    doc.image(image, x, y, { fit: [THUMB, THUMB], align: "center", valign: "center" });
+  } else {
+    doc.rect(x, y, THUMB, THUMB).fill(PRIMARY_LIGHT);
+    // Simple shopping-bag glyph, centred.
+    const bw = 14;
+    const bh = 12;
+    const bx = x + (THUMB - bw) / 2;
+    const by = y + 11;
+    doc.lineWidth(1.2).strokeColor(PRIMARY);
+    doc.roundedRect(bx, by, bw, bh, 1.5).stroke();
+    doc
+      .moveTo(bx + 4, by)
+      .bezierCurveTo(bx + 4, by - 6, bx + bw - 4, by - 6, bx + bw - 4, by)
+      .stroke();
+  }
+  doc.restore();
+  doc.lineWidth(0.6).roundedRect(x, y, THUMB, THUMB, 4).strokeColor(BORDER).stroke();
+  doc.lineWidth(1);
+}
+
 /** Items table: primary-filled header row, then one bordered row per line. */
-function drawItemsTable(doc: PDFKit.PDFDocument, order: Order, top: number) {
+function drawItemsTable(
+  doc: PDFKit.PDFDocument,
+  order: Order,
+  top: number,
+  images: Map<string, Buffer | null>
+) {
   const PAD = 8;
+  // Thumbnail sits in the Product column, left of the title.
+  const TITLE_X = LEFT + PAD + THUMB + 10;
   const columns = [
     { label: "Product", x: LEFT + PAD, width: 249 },
     { label: "Qty", x: LEFT + 265 + PAD, width: 39 },
@@ -125,23 +201,24 @@ function drawItemsTable(doc: PDFKit.PDFDocument, order: Order, top: number) {
 
   let y = top + headerHeight;
 
-  order.items.forEach((item, rowIndex) => {
+  order.items.forEach((item) => {
     const lineTotal = parseFloat(item.price) * item.quantity;
     const label = item.isPreOrder ? `${item.title}  [PRE-ORDER]` : item.title;
 
     doc.font(BODY).fontSize(10);
-    const titleHeight = doc.heightOfString(label, { width: columns[0].width });
-    const rowHeight = Math.max(titleHeight + PAD * 2, 28);
+    const titleWidth = columns[0].x + columns[0].width - TITLE_X;
+    const titleHeight = doc.heightOfString(label, { width: titleWidth });
+    const rowHeight = Math.max(titleHeight, THUMB) + PAD * 2;
+    // Single-line cells are vertically centred in the row.
+    const textY = y + (rowHeight - doc.currentLineHeight()) / 2;
 
-    // Zebra striping keeps long item lists readable.
-    if (rowIndex % 2 === 1) {
-      doc.rect(LEFT, y, CONTENT_WIDTH, rowHeight).fill(PRIMARY_LIGHT);
-    }
+    drawThumb(doc, item.imageUrl ? images.get(item.imageUrl) : null, LEFT + PAD, y + (rowHeight - THUMB) / 2);
 
     doc.fillColor(INK).font(BODY).fontSize(10);
-    const cells = [label, String(item.quantity), taka(item.price), taka(lineTotal)];
-    columns.forEach((col, index) => {
-      doc.text(cells[index], col.x, y + PAD, { width: col.width, align: alignFor(index) });
+    doc.text(label, TITLE_X, y + (rowHeight - titleHeight) / 2, { width: titleWidth });
+    const cells = [String(item.quantity), taka(item.price), taka(lineTotal)];
+    columns.slice(1).forEach((col, index) => {
+      doc.text(cells[index], col.x, textY, { width: col.width, align: alignFor(index + 1) });
     });
 
     y += rowHeight;
@@ -155,9 +232,11 @@ function drawItemsTable(doc: PDFKit.PDFDocument, order: Order, top: number) {
 
 /**
  * Streams a branded order-summary PDF for `order` into the response.
- * Generated server-side so it always matches the stored order.
+ * Generated server-side so it always matches the stored order. Line images are
+ * downloaded first (see loadItemImages), so this resolves once drawing starts.
  */
-export function streamOrderPdf(order: Order, stream: NodeJS.WritableStream) {
+export async function streamOrderPdf(order: Order, stream: NodeJS.WritableStream) {
+  const images = await loadItemImages(order);
   const doc = new PDFDocument({ size: "A4", margin: 50 });
   registerFonts(doc);
   doc.pipe(stream);
@@ -233,7 +312,7 @@ export function streamOrderPdf(order: Order, stream: NodeJS.WritableStream) {
 
   // ---- Items ----
   doc.fillColor(INK).fontSize(13).font(BOLD).text("Items", LEFT, y);
-  drawItemsTable(doc, order, doc.y + 8);
+  drawItemsTable(doc, order, doc.y + 8, images);
   doc.moveDown(1);
 
   // ---- Totals (right aligned) ----

@@ -74,5 +74,5 @@ export async function getOrderPdf(req: Request, res: Response) {
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename="yugenbd-order-${id}.pdf"`);
-  streamOrderPdf(order, res);
+  await streamOrderPdf(order, res);
 }

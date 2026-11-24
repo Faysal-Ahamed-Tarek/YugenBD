@@ -194,11 +194,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <tr key={item.id} className="border-b border-border last:border-b-0">
                   <td className="py-3 pr-3">
                     <div className="flex items-center gap-3">
-                      <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface">
-                        {item.imageUrl && (
-                          <Image src={item.imageUrl} alt={item.title} fill sizes="48px" className="object-cover" />
-                        )}
-                      </span>
+                      <ItemThumb src={item.imageUrl} alt={item.title} />
                       <div>
                         <p className="font-medium">
                           {item.title}
@@ -263,5 +259,36 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         }}
       />
     </div>
+  );
+}
+
+/**
+ * Order-line thumbnail. Custom (off-catalogue) lines have no image, and old
+ * product images can 404 — both show the same bag icon as the PDF invoice.
+ */
+function ItemThumb({ src, alt }: { src: string | null; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary-light text-primary">
+      {src && !failed ? (
+        <Image src={src} alt={alt} fill sizes="48px" onError={() => setFailed(true)} className="object-cover" />
+      ) : (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          role="img"
+          aria-label="No product image"
+        >
+          <path d="M5 8h14l-1 12H6L5 8z" />
+          <path d="M9 8V6.5a3 3 0 0 1 6 0V8" />
+        </svg>
+      )}
+    </span>
   );
 }
