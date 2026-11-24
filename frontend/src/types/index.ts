@@ -123,6 +123,11 @@ export interface FeaturedReview extends Review {
   product: { title: string; slug: string } | null;
 }
 
+export interface ReviewsPage {
+  reviews: FeaturedReview[];
+  pagination: Pagination;
+}
+
 /** Shop-by-concern card: concern image/title linking to one representative product. */
 export interface Concern {
   id: string;

@@ -6,6 +6,7 @@ import type {
   AdminListReviewsQuery,
   AdminUpdateReviewInput,
   CreateReviewInput,
+  ListAllReviewsQuery,
 } from "./review.validators";
 
 // Review photos always come back in their admin-chosen order.
@@ -36,6 +37,30 @@ export const reviewRepository = {
       limit,
       with: { images: orderedImages, product: productSummary },
     });
+  },
+
+  /**
+   * Public "all reviews" page: every APPROVED review, featured ones first (in
+   * admin order), then newest. `id` breaks ties so Load More pages stay stable.
+   */
+  async findApprovedPage(query: ListAllReviewsQuery) {
+    const where = eq(reviews.status, "approved");
+    const [rows, [{ count }]] = await Promise.all([
+      db.query.reviews.findMany({
+        where,
+        orderBy: [
+          desc(reviews.isFeatured),
+          sql`${reviews.featuredOrder} ASC NULLS LAST`,
+          desc(reviews.date),
+          desc(reviews.id),
+        ],
+        limit: query.limit,
+        offset: (query.page - 1) * query.limit,
+        with: { images: orderedImages, product: productSummary },
+      }),
+      db.select({ count: sql<number>`count(*)::int` }).from(reviews).where(where),
+    ]);
+    return { rows, total: count };
   },
 
   /** Fallback filler for the slider: latest approved 4★+ reviews with text. */

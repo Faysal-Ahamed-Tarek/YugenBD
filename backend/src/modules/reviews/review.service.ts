@@ -5,6 +5,7 @@ import type {
   AdminListReviewsQuery,
   AdminUpdateReviewInput,
   CreateReviewInput,
+  ListAllReviewsQuery,
 } from "./review.validators";
 
 /** How many reviews the home-page slider shows. */
@@ -124,6 +125,21 @@ export const reviewService = {
           )
         : [];
     return [...featured, ...filler].map(toFeaturedDto);
+  },
+
+  /** Public "all reviews" page — approved reviews, paginated. */
+  async listAll(query: ListAllReviewsQuery) {
+    const { rows, total } = await reviewRepository.findApprovedPage(query);
+    return {
+      items: rows.map(toFeaturedDto),
+      pagination: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+        hasMore: query.page * query.limit < total,
+      },
+    };
   },
 
   async assertProductExists(productId: string | null | undefined) {

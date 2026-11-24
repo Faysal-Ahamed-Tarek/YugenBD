@@ -13,6 +13,12 @@ export const createReviewSchema = z.object({
   rating: z.coerce.number().int().min(1).max(5),
 });
 
+/** Public "all reviews" page — approved only, paginated. */
+export const listAllReviewsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(48).default(16),
+});
+
 const reviewStatuses = ["pending", "approved", "rejected"] as const;
 
 /** Admin moderation list — all reviews, filterable/searchable, paginated. */
@@ -57,6 +63,7 @@ export const adminCreateReviewSchema = z.object({
 
 export const adminUpdateReviewSchema = z.object(reviewContentFields).partial();
 
+export type ListAllReviewsQuery = z.infer<typeof listAllReviewsQuerySchema>;
 export type ListReviewsQuery = z.infer<typeof listReviewsQuerySchema>;
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
 export type AdminListReviewsQuery = z.infer<typeof adminListReviewsQuerySchema>;

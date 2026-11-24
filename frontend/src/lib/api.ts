@@ -10,6 +10,7 @@ import type {
   ProductDetail,
   ProductListParams,
   ProductsPage,
+  ReviewsPage,
   Review,
   HeroSlide,
   FaqItem,
@@ -56,6 +57,23 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getHeroSlides(): Promise<HeroSlide[]> {
   return (await apiGet<HeroSlide[]>("/hero-slides")) ?? [];
+}
+
+/** First page of every approved review for /reviews (featured first, then newest). */
+export async function getReviewsPage(limit: number): Promise<ReviewsPage> {
+  const empty: ReviewsPage = {
+    reviews: [],
+    pagination: { page: 1, limit, total: 0, totalPages: 0, hasMore: false },
+  };
+  try {
+    const res = await fetch(`${API_URL}/reviews/all?page=1&limit=${limit}`, { next: { revalidate: 300 } });
+    if (!res.ok) return empty;
+    const json = (await res.json()) as ApiResponse<FeaturedReview[]>;
+    if (!json.success || !json.meta) return empty;
+    return { reviews: json.data, pagination: json.meta.pagination };
+  } catch {
+    return empty;
+  }
 }
 
 /** Up to 8 reviews for the home slider (featured first, topped up with latest 4★+). */

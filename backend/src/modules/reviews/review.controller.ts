@@ -3,6 +3,7 @@ import { sendSuccess } from "../../utils/apiResponse";
 import { reviewService } from "./review.service";
 import {
   listReviewsQuerySchema,
+  listAllReviewsQuerySchema,
   createReviewSchema,
   adminListReviewsQuerySchema,
   adminCreateReviewSchema,
@@ -68,4 +69,10 @@ export async function updateAdminReview(req: Request, res: Response) {
 export async function listFeaturedReviews(_req: Request, res: Response) {
   const reviews = await reviewService.listFeatured();
   sendSuccess(res, reviews);
+}
+
+export async function listAllReviews(req: Request, res: Response) {
+  const query = listAllReviewsQuerySchema.parse(req.query);
+  const result = await reviewService.listAll(query);
+  sendSuccess(res, result.items, 200, { pagination: result.pagination });
 }
