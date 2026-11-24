@@ -1,10 +1,15 @@
 import { ApiError } from "../../utils/ApiError";
 import { sendNewOrderEmail } from "../../config/mailer";
-import { locationRepository } from "../locations/location.repository";
 import { deliveryService } from "../delivery/delivery.service";
 import { couponService } from "../coupons/coupon.service";
 import { orderRepository } from "./order.repository";
-import type { CreateOrderInput, CreateManualOrderInput, ListOrdersQuery, OrderStatus } from "./order.validators";
+import type {
+  CreateOrderInput,
+  CreateManualOrderInput,
+  CustomOrderItem,
+  ListOrdersQuery,
+  OrderStatus,
+} from "./order.validators";
 
 /**
  * Delivery pricing is authoritative on the server — never trust the client.
@@ -39,55 +44,37 @@ function productPrice(product: { basePrice: string; discountPrice: string | null
 }
 
 /**
- * Compose the stored address text for a manual order. When the admin picked a
- * division → district → upazila the chain is verified against the seeded
- * hierarchy (a mismatched pair is a client bug, not a valid address) and the
- * text is built from the canonical NAMES, so it reads the same as a storefront
- * order. Falls back to the typed address when no location was selected.
- */
-async function resolveManualAddress(input: Omit<CreateManualOrderInput, "status">) {
-  const { divisionId, districtId, upazilaId, area } = input;
-  if (!divisionId || !districtId || !upazilaId || !area) {
-    if (!input.address) throw ApiError.badRequest("A delivery address is required.");
-    return input.address;
-  }
-
-  const [division, district, upazila] = await Promise.all([
-    locationRepository.findDivisionById(divisionId),
-    locationRepository.findDistrictById(districtId),
-    locationRepository.findUpazilaById(upazilaId),
-  ]);
-  if (!division || !district || !upazila) throw ApiError.badRequest("Invalid delivery location.");
-  if (district.divisionId !== division.id || upazila.districtId !== district.id) {
-    throw ApiError.badRequest("The selected district / upazila does not belong to that division.");
-  }
-
-  return `${area}, ${upazila.name}, ${district.name}, ${division.name}`;
-}
-
-/**
  * Shared order builder: validates products, computes authoritative prices +
  * delivery, decrements stock, and inserts the order atomically. Stock never
  * blocks an order: whatever stock can cover ships as a regular line, and any
  * overflow becomes a separate PRE-ORDER line (isPreOrder = true) for the same
  * product — so requesting 10 with 5 in stock yields two order_items rows
  * (5 regular + 5 pre-order) and only the covered 5 are decremented.
+ *
+ * `customItems` (manual orders only) are off-catalogue lines priced by the
+ * admin: no product link, no image, no stock involvement.
  */
 async function buildAndInsertOrder(
   // `freeDelivery` only ever arrives on manual orders — customer checkout never
   // sets it, so it stays optional here.
-  input: Omit<CreateManualOrderInput, "status" | "address" | "freeDelivery"> & {
-    address: string;
+  input: Omit<CreateManualOrderInput, "status" | "freeDelivery" | "customItems"> & {
     freeDelivery?: boolean;
     couponCode?: string;
+    customItems?: CustomOrderItem[];
   },
   status: OrderStatus = "pending",
   userId: string | null = null
 ) {
   const productIds = [...new Set(input.items.map((item) => item.productId))];
-  const found = await orderRepository.findProductsByIds(productIds);
+  // A manual order may be custom lines only — skip the catalogue lookups then.
+  const [found, mainImages] =
+    productIds.length > 0
+      ? await Promise.all([
+          orderRepository.findProductsByIds(productIds),
+          orderRepository.findMainImagesByProductIds(productIds),
+        ])
+      : [[], new Map<string, string>()];
   const byId = new Map(found.map((p) => [p.id, p]));
-  const mainImages = await orderRepository.findMainImagesByProductIds(productIds);
 
   const resolved = input.items.map((item) => {
     const product = byId.get(item.productId);
@@ -112,7 +99,8 @@ async function buildAndInsertOrder(
     remainingByBucket.set(bucketKey, remaining - inStockQty);
 
     const base = {
-      productId: product.id,
+      // Widened so custom (off-catalogue) lines can join this list with no product.
+      productId: product.id as string | null,
       title: product.title,
       price: money(variant.unitPrice),
       imageUrl: mainImages.get(product.id) ?? null,
@@ -126,6 +114,18 @@ async function buildAndInsertOrder(
     }
     return lines;
   });
+
+  for (const custom of input.customItems ?? []) {
+    lineItems.push({
+      productId: null,
+      title: custom.title,
+      price: money(custom.price),
+      imageUrl: null,
+      quantity: custom.quantity,
+      isPreOrder: false,
+      lineTotal: custom.price * custom.quantity,
+    });
+  }
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
   const { fee: zoneFee, estimate } = DELIVERY[input.deliveryZone];
@@ -201,8 +201,7 @@ export const orderService = {
   /** Admin manual order — same pricing integrity, plus an admin-set status. */
   async createManual(input: CreateManualOrderInput) {
     const { status, ...rest } = input;
-    const address = await resolveManualAddress(rest);
-    return buildAndInsertOrder({ ...rest, address }, status ?? "confirmed");
+    return buildAndInsertOrder(rest, status ?? "confirmed");
   },
 
   async getById(id: string) {

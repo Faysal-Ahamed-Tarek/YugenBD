@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { formatPrice, ORDER_STATUSES } from "@/lib/format";
-import type { LocationOption, Order, OrderStatus, Product } from "@/lib/types";
+import type { Order, OrderStatus, Product } from "@/lib/types";
 
 // Local Bangladeshi phone format (matches the backend order schema).
 const BD_PHONE = /^01[3-9]\d{8}$/;
@@ -21,13 +21,21 @@ interface Line {
   quantity: number;
 }
 
+/** Off-catalogue line: a product not listed on the website, priced by hand. */
+interface CustomLine {
+  id: number;
+  title: string;
+  price: number;
+  quantity: number;
+}
+
 const inputClass =
   "w-full h-10 rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-primary";
 
 /**
- * Manual order entry — products and the full customer details (including the
- * cascading division → district → upazila / thana + area) on ONE page, so the
- * admin can see everything at once instead of stepping through a modal.
+ * Manual order entry — products (catalogue search and/or custom off-catalogue
+ * lines) and the customer details with a single free-text address, all on ONE
+ * page so the admin can see everything at once.
  */
 export default function ManualOrderPage() {
   const router = useRouter();
@@ -35,48 +43,13 @@ export default function ManualOrderPage() {
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
-  const [area, setArea] = useState("");
+  const [address, setAddress] = useState("");
   const [zone, setZone] = useState<"inside_dhaka" | "outside_dhaka" | null>(null);
   // Per-order delivery-fee waiver — the backend honours this regardless of zone.
   const [freeDelivery, setFreeDelivery] = useState(false);
   const [status, setStatus] = useState<OrderStatus>("confirmed");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  // Cascading location selects — never free-typed, always picked from /locations.
-  const [divisions, setDivisions] = useState<LocationOption[]>([]);
-  const [districts, setDistricts] = useState<LocationOption[]>([]);
-  const [upazilas, setUpazilas] = useState<LocationOption[]>([]);
-  const [divisionId, setDivisionId] = useState("");
-  const [districtId, setDistrictId] = useState("");
-  const [upazilaId, setUpazilaId] = useState("");
-
-  useEffect(() => {
-    api
-      .get<LocationOption[]>("/locations/divisions")
-      .then((r) => setDivisions(r.data))
-      .catch(() => setDivisions([]));
-  }, []);
-
-  const onDivision = async (id: string) => {
-    setDivisionId(id);
-    setDistrictId("");
-    setUpazilaId("");
-    setDistricts([]);
-    setUpazilas([]);
-    if (!id) return;
-    const res = await api.get<LocationOption[]>(`/locations/districts?divisionId=${id}`);
-    setDistricts(res.data);
-  };
-
-  const onDistrict = async (id: string) => {
-    setDistrictId(id);
-    setUpazilaId("");
-    setUpazilas([]);
-    if (!id) return;
-    const res = await api.get<LocationOption[]>(`/locations/upazilas?districtId=${id}`);
-    setUpazilas(res.data);
-  };
 
   // Product search
   const [search, setSearch] = useState("");
@@ -100,20 +73,53 @@ export default function ManualOrderPage() {
     setLines((prev) => [...prev, { product: p, quantity: 1 }]);
   };
 
+  // Custom (off-catalogue) products: name + unit price typed by the admin.
+  const [customLines, setCustomLines] = useState<CustomLine[]>([]);
+  const [customTitle, setCustomTitle] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
+  const [customQty, setCustomQty] = useState("1");
+  const customPriceNum = Number(customPrice);
+  const customValid =
+    customTitle.trim().length > 0 && customPrice.trim() !== "" && Number.isFinite(customPriceNum) && customPriceNum >= 0;
+
+  const addCustom = () => {
+    if (!customValid) return;
+    setCustomLines((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        title: customTitle.trim(),
+        price: customPriceNum,
+        quantity: Math.max(1, parseInt(customQty, 10) || 1),
+      },
+    ]);
+    setCustomTitle("");
+    setCustomPrice("");
+    setCustomQty("1");
+  };
+  const setCustomLineQty = (id: number, qty: number) =>
+    setCustomLines((prev) => prev.map((l) => (l.id === id ? { ...l, quantity: Math.max(1, qty) } : l)));
+  const removeCustom = (id: number) => setCustomLines((prev) => prev.filter((l) => l.id !== id));
+
   const setQty = (id: string, qty: number) =>
     setLines((prev) => prev.map((l) => (l.product.id === id ? { ...l, quantity: Math.max(1, qty) } : l)));
   const removeLine = (id: string) => setLines((prev) => prev.filter((l) => l.product.id !== id));
 
   const linePrice = (l: Line) => parseFloat(l.product.discountPrice ?? l.product.basePrice);
-  const subtotal = useMemo(() => lines.reduce((s, l) => s + linePrice(l) * l.quantity, 0), [lines]);
+  const subtotal = useMemo(
+    () =>
+      lines.reduce((s, l) => s + linePrice(l) * l.quantity, 0) +
+      customLines.reduce((s, l) => s + l.price * l.quantity, 0),
+    [lines, customLines]
+  );
   const selectedZone = ZONES.find((z) => z.zone === zone);
   const deliveryFee = freeDelivery ? 0 : selectedZone?.fee ?? null;
   const total = deliveryFee !== null ? subtotal + deliveryFee : null;
 
   const phoneValid = BD_PHONE.test(phone.trim());
-  const locationValid = Boolean(divisionId && districtId && upazilaId && area.trim().length >= 3);
-  const canSubmit =
-    lines.length > 0 && fullName.trim().length >= 2 && phoneValid && locationValid && Boolean(zone);
+  const addressValid = address.trim().length >= 5;
+  const hasItems = lines.length + customLines.length > 0;
+  const canSubmit = hasItems && fullName.trim().length >= 2 && phoneValid && addressValid && Boolean(zone);
 
   const submit = async () => {
     setError(null);
@@ -123,14 +129,12 @@ export default function ManualOrderPage() {
       const res = await api.post<Order>("/orders/manual", {
         fullName: fullName.trim(),
         phone: phone.trim(),
-        divisionId,
-        districtId,
-        upazilaId,
-        area: area.trim(),
+        address: address.trim(),
         deliveryZone: zone,
         freeDelivery,
         status,
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
+        customItems: customLines.map((l) => ({ title: l.title, price: l.price, quantity: l.quantity })),
       });
       router.push(`/orders/${res.data.id}`);
     } catch (err) {
@@ -140,7 +144,7 @@ export default function ManualOrderPage() {
   };
 
   return (
-    <div className="max-w-5xl">
+    <div className="w-full">
       <div className="mb-6">
         <Link href="/orders" className="text-sm text-muted hover:text-primary">
           ← Back to orders
@@ -179,11 +183,20 @@ export default function ManualOrderPage() {
             )}
           </div>
 
-          {lines.length > 0 ? (
+          {hasItems ? (
             <ul className="mt-3 divide-y divide-border">
+              {/* Column headings: unit price, quantity, line total. */}
+              <li aria-hidden="true" className="flex items-center gap-2 pb-2 text-xs font-medium uppercase tracking-wide text-muted">
+                <span className="flex-1">Product</span>
+                <span className="w-20 text-right">Price</span>
+                <span className="w-14 text-center">Qty</span>
+                <span className="w-20 text-right">Total</span>
+                <span className="w-3" />
+              </li>
               {lines.map((l) => (
                 <li key={l.product.id} className="flex items-center gap-2 py-2.5">
                   <span className="flex-1 text-sm">{l.product.title}</span>
+                  <span className="w-20 text-right text-sm text-muted">{formatPrice(linePrice(l))}</span>
                   <input
                     type="number"
                     min={1}
@@ -198,7 +211,29 @@ export default function ManualOrderPage() {
                     type="button"
                     aria-label={`Remove ${l.product.title}`}
                     onClick={() => removeLine(l.product.id)}
-                    className="text-muted hover:text-red-600"
+                    className="w-3 cursor-pointer text-muted hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+              {customLines.map((l) => (
+                <li key={l.id} className="flex items-center gap-2 py-2.5">
+                  <span className="flex-1 text-sm">{l.title}</span>
+                  <span className="w-20 text-right text-sm text-muted">{formatPrice(l.price)}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={l.quantity}
+                    onChange={(e) => setCustomLineQty(l.id, parseInt(e.target.value, 10) || 1)}
+                    className="h-8 w-14 rounded border border-border bg-surface px-2 text-sm"
+                  />
+                  <span className="w-20 text-right text-sm font-semibold">{formatPrice(l.price * l.quantity)}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${l.title}`}
+                    onClick={() => removeCustom(l.id)}
+                    className="w-3 cursor-pointer text-muted hover:text-red-600"
                   >
                     ×
                   </button>
@@ -208,9 +243,51 @@ export default function ManualOrderPage() {
           ) : (
             <p className="mt-3 text-xs text-muted">No products added yet.</p>
           )}
+
+          {/* Products that aren't listed on the website */}
+          <div className="mt-5 border-t border-border pt-4">
+            <h3 className="mb-2 text-sm font-medium">Custom product</h3>
+            <div className="grid grid-cols-[1fr_6.5rem_4rem] gap-2">
+              <input
+                value={customTitle}
+                onChange={(e) => setCustomTitle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addCustom()}
+                placeholder="Product name"
+                aria-label="Custom product name"
+                className={inputClass}
+              />
+              <input
+                type="number"
+                min={0}
+                value={customPrice}
+                onChange={(e) => setCustomPrice(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addCustom()}
+                placeholder="Price ৳"
+                aria-label="Custom product unit price"
+                className={inputClass}
+              />
+              <input
+                type="number"
+                min={1}
+                value={customQty}
+                onChange={(e) => setCustomQty(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addCustom()}
+                aria-label="Custom product quantity"
+                className={inputClass}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={addCustom}
+              disabled={!customValid}
+              className="mt-2 cursor-pointer rounded-full border border-primary px-4 py-1.5 text-sm font-medium text-primary hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            >
+              + Add custom product
+            </button>
+          </div>
         </section>
 
-        {/* Customer details — contact + full location together */}
+        {/* Customer details — contact + a single free-text address */}
         <section className="rounded-2xl border border-border bg-background p-5 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
             Customer details
@@ -224,64 +301,19 @@ export default function ManualOrderPage() {
               onChange={setPhone}
               error={phone && !phoneValid ? "Invalid BD phone" : ""}
             />
+          </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Division</label>
-              <select
-                value={divisionId}
-                onChange={(e) => onDivision(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">Select division</option>
-                {divisions.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">District</label>
-              <select
-                value={districtId}
-                onChange={(e) => onDistrict(e.target.value)}
-                disabled={!divisionId}
-                className={`${inputClass} disabled:opacity-60`}
-              >
-                <option value="">{divisionId ? "Select district" : "Select division first"}</option>
-                {districts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Upazila / Thana</label>
-              <select
-                value={upazilaId}
-                onChange={(e) => setUpazilaId(e.target.value)}
-                disabled={!districtId}
-                className={`${inputClass} disabled:opacity-60`}
-              >
-                <option value="">
-                  {districtId ? "Select upazila / thana" : "Select district first"}
-                </option>
-                {upazilas.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <Field
-              label="Area"
-              value={area}
-              onChange={setArea}
-              placeholder="House / road / area"
+          <div>
+            <label htmlFor="manual-address" className="mb-1.5 block text-sm font-medium">
+              Address
+            </label>
+            <textarea
+              id="manual-address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              rows={3}
+              placeholder="House / road, area, thana, district"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </div>
 
