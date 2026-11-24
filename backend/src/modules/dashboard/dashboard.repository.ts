@@ -10,6 +10,21 @@ const LOW_STOCK_THRESHOLD = 10;
 
 export const dashboardRepository = {
   /**
+   * Total sales: sum of order totals (incl. delivery fee, after discount)
+   * across every order that isn't cancelled — the same rule Top Selling uses.
+   */
+  async totalSales() {
+    const [row] = await db
+      .select({
+        amount: sql<string>`coalesce(sum(${orders.total}), 0)::numeric(12,2)::text`,
+        orders: sql<number>`count(*)::int`,
+      })
+      .from(orders)
+      .where(ne(orders.status, "cancelled"));
+    return row;
+  },
+
+  /**
    * Top products by total quantity sold across order_items, excluding
    * cancelled orders. Joins current product to fetch title + main image;
    * revenue is summed from the snapshotted line price × quantity.
@@ -30,7 +45,10 @@ export const dashboardRepository = {
         and(eq(productImages.productId, orderItems.productId), eq(productImages.isMain, true))
       )
       .where(ne(orders.status, "cancelled"))
-      .groupBy(orderItems.productId)
+      // Lines with no product link (custom manual-order items, or products
+      // since deleted) are grouped by their title instead of all collapsing
+      // into one NULL bucket.
+      .groupBy(orderItems.productId, sql`case when ${orderItems.productId} is null then ${orderItems.title} end`)
       .orderBy(desc(sql`sum(${orderItems.quantity})`))
       .limit(PANEL_LIMIT);
 

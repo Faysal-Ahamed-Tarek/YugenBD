@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [productCount, setProductCount] = useState<number | null>(null);
   const [orderCount, setOrderCount] = useState<number | null>(null);
   const [pendingCount, setPendingCount] = useState<number | null>(null);
+  const [totalSales, setTotalSales] = useState<string | null>(null);
   const [topSellers, setTopSellers] = useState<TopSeller[] | null>(null);
   const [lowStock, setLowStock] = useState<LowStockItem[] | null>(null);
 
@@ -37,11 +38,14 @@ export default function DashboardPage() {
     api.get<Product[]>("/products?limit=1&status=published").then((r) => setProductCount(r.meta?.pagination.total ?? null));
     api.get<Order[]>("/orders?limit=1").then((r) => setOrderCount(r.meta?.pagination.total ?? null));
     api.get<Order[]>("/orders?limit=1&status=pending").then((r) => setPendingCount(r.meta?.pagination.total ?? null));
+    api.get<{ amount: string; orders: number }>("/admin/dashboard/sales").then((r) => setTotalSales(r.data.amount));
     api.get<TopSeller[]>("/admin/dashboard/top-selling").then((r) => setTopSellers(r.data));
     api.get<LowStockItem[]>("/admin/dashboard/low-stock").then((r) => setLowStock(r.data));
   }, []);
 
   const stats = [
+    // Sum of order totals, excluding cancelled orders.
+    { label: "Total sales", value: totalSales === null ? null : formatPrice(totalSales), href: "/orders" },
     { label: "Published products", value: productCount, href: "/products" },
     { label: "Total orders", value: orderCount, href: "/orders" },
     { label: "Pending orders", value: pendingCount, href: "/orders" },
@@ -52,7 +56,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-semibold">Welcome back, {user?.fullName?.split(" ")[0]}</h1>
       <p className="mt-1 text-sm text-muted">Here&apos;s a quick look at your store.</p>
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((card) => (
           <Link key={card.label} href={card.href} className="rounded-2xl border border-border bg-background p-5 hover:border-primary/50 transition-colors">
             <p className="text-sm text-muted">{card.label}</p>
