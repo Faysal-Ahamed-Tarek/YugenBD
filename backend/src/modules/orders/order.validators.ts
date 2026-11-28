@@ -67,6 +67,9 @@ export const createManualOrderSchema = z
     // or the global free-delivery settings. The zone is still required — it
     // drives the delivery estimate shown to the customer.
     freeDelivery: z.boolean().optional().default(false),
+    // Admin-only flat discount (৳) off the item subtotal — never the delivery
+    // fee. The service rejects a discount larger than the subtotal.
+    discount: z.number().nonnegative("Discount can't be negative").max(10_000_000).optional().default(0),
     paymentMethod: z.enum(["bkash", "cod"]).default("cod"),
     bkashTransactionId: z.string().trim().min(4).max(50).optional(),
     bkashAmount: z.number().positive().optional(),

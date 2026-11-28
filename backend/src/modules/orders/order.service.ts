@@ -57,8 +57,10 @@ function productPrice(product: { basePrice: string; discountPrice: string | null
 async function buildAndInsertOrder(
   // `freeDelivery` only ever arrives on manual orders — customer checkout never
   // sets it, so it stays optional here.
-  input: Omit<CreateManualOrderInput, "status" | "freeDelivery" | "customItems"> & {
+  input: Omit<CreateManualOrderInput, "status" | "freeDelivery" | "customItems" | "discount"> & {
     freeDelivery?: boolean;
+    // Flat admin discount (manual orders only); customer checkout never sets it.
+    discount?: number;
     couponCode?: string;
     customItems?: CustomOrderItem[];
   },
@@ -143,7 +145,13 @@ async function buildAndInsertOrder(
   // discounted, and the free-delivery threshold above is judged on the
   // pre-discount subtotal (a coupon never makes delivery cost money).
   const applied = input.couponCode ? await couponService.resolveForOrder(input.couponCode, subtotal) : null;
-  const discount = applied?.discount ?? 0;
+  // Manual orders carry an admin-typed flat discount instead (same rule: items
+  // only, judged after the free-delivery decision).
+  const manualDiscount = Math.round((input.discount ?? 0) * 100) / 100;
+  if (manualDiscount > subtotal) {
+    throw ApiError.badRequest("Discount can't be more than the product subtotal.");
+  }
+  const discount = (applied?.discount ?? 0) + manualDiscount;
   const total = subtotal - discount + fee;
 
   const isBkash = input.paymentMethod === "bkash";
