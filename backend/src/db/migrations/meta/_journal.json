@@ -204,6 +204,20 @@
       "when": 1795338839631,
       "tag": "0028_review_content",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1795885106861,
+      "tag": "0029_order_coupon_discount",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795885869154,
+      "tag": "0030_order_item_regular_price",
+      "breakpoints": true
     }
   ]
 }

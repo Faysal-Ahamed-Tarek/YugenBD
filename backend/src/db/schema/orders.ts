@@ -24,6 +24,11 @@ export const orders = pgTable(
     // discount + deliveryFee. No FK, so deleting a coupon keeps history intact.
     couponCode: varchar("coupon_code", { length: 40 }),
     discount: numeric("discount", { precision: 10, scale: 2 }).notNull().default("0"),
+    // The coupon's share of `discount` (NULL on orders without a coupon, and on
+    // rows predating this column). Manual orders can stack a coupon with a flat
+    // admin discount, so this lets the PDF/admin show the two lines apart:
+    // admin discount = discount - couponDiscount.
+    couponDiscount: numeric("coupon_discount", { precision: 10, scale: 2 }),
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
     status: orderStatusEnum("status").notNull().default("pending"),
     // Payment: 'cod' (default) or 'bkash' manual Send Money reference. The
@@ -52,6 +57,10 @@ export const orderItems = pgTable(
     productId: uuid("product_id").references(() => products.id, { onDelete: "set null" }),
     title: varchar("title", { length: 255 }).notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+    // Snapshot of the product's regular (base) price at order time, so the PDF
+    // can show it beside the offer price actually charged (`price`). NULL for
+    // custom lines and rows predating this column — show `price` alone then.
+    regularPrice: numeric("regular_price", { precision: 10, scale: 2 }),
     imageUrl: varchar("image_url", { length: 500 }),
     quantity: integer("quantity").notNull(),
     // True when the product/weight had 0 stock at order time — the order is

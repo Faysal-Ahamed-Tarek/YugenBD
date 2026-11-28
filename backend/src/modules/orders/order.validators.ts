@@ -70,6 +70,9 @@ export const createManualOrderSchema = z
     // Admin-only flat discount (৳) off the item subtotal — never the delivery
     // fee. The service rejects a discount larger than the subtotal.
     discount: z.number().nonnegative("Discount can't be negative").max(10_000_000).optional().default(0),
+    // Optional coupon, re-validated and priced by the server exactly as at
+    // checkout. Stacks with the flat `discount` above.
+    couponCode: couponCodeSchema.optional(),
     paymentMethod: z.enum(["bkash", "cod"]).default("cod"),
     bkashTransactionId: z.string().trim().min(4).max(50).optional(),
     bkashAmount: z.number().positive().optional(),

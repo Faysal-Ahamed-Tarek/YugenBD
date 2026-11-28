@@ -10,10 +10,21 @@ import type { Order, OrderStatus, Product } from "@/lib/types";
 // Local Bangladeshi phone format (matches the backend order schema).
 const BD_PHONE = /^01[3-9]\d{8}$/;
 
-// Fees shown for context only; the backend recomputes the authoritative total.
-const ZONES: { zone: "inside_dhaka" | "outside_dhaka"; label: string; fee: number }[] = [
-  { zone: "inside_dhaka", label: "Inside Dhaka (৳70, 1-2 days)", fee: 70 },
-  { zone: "outside_dhaka", label: "Outside Dhaka (৳120, 2-3 days)", fee: 120 },
+// Delivery options the admin picks from. Fees shown for context only; the
+// backend recomputes the authoritative total. "Free" still has to send a zone
+// (the order row requires one for the delivery estimate), so it rides on
+// inside_dhaka with the per-order fee waiver switched on.
+type DeliveryOption = "free" | "inside_dhaka" | "outside_dhaka";
+const DELIVERY_OPTIONS: {
+  option: DeliveryOption;
+  zone: "inside_dhaka" | "outside_dhaka";
+  label: string;
+  detail: string;
+  fee: number;
+}[] = [
+  { option: "free", zone: "inside_dhaka", label: "Free delivery", detail: "৳0", fee: 0 },
+  { option: "inside_dhaka", zone: "inside_dhaka", label: "Inside Dhaka", detail: "৳70 · 1-2 days", fee: 70 },
+  { option: "outside_dhaka", zone: "outside_dhaka", label: "Outside Dhaka", detail: "৳120 · 2-3 days", fee: 120 },
 ];
 
 interface Line {
@@ -44,11 +55,15 @@ export default function ManualOrderPage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [zone, setZone] = useState<"inside_dhaka" | "outside_dhaka" | null>(null);
-  // Per-order delivery-fee waiver — the backend honours this regardless of zone.
-  const [freeDelivery, setFreeDelivery] = useState(false);
+  const [deliveryOption, setDeliveryOption] = useState<DeliveryOption | null>(null);
   // Flat ৳ discount off the product subtotal (never the delivery fee).
   const [discountInput, setDiscountInput] = useState("");
+  // Coupon: validated (and priced) by the backend's public preview endpoint;
+  // the order endpoint re-validates it, so this is display only.
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [status, setStatus] = useState<OrderStatus>("confirmed");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -114,17 +129,67 @@ export default function ManualOrderPage() {
       customLines.reduce((s, l) => s + l.price * l.quantity, 0),
     [lines, customLines]
   );
-  const selectedZone = ZONES.find((z) => z.zone === zone);
-  const deliveryFee = freeDelivery ? 0 : selectedZone?.fee ?? null;
+  const hasItems = lines.length + customLines.length > 0;
+  const selectedDelivery = DELIVERY_OPTIONS.find((d) => d.option === deliveryOption);
+  const zone = selectedDelivery?.zone ?? null;
+  const freeDelivery = deliveryOption === "free";
+  const deliveryFee = selectedDelivery?.fee ?? null;
+  const couponDiscount = coupon?.discount ?? 0;
   const discountNum = discountInput.trim() === "" ? 0 : Number(discountInput);
-  const discountValid = Number.isFinite(discountNum) && discountNum >= 0 && discountNum <= subtotal;
+  const discountValid =
+    Number.isFinite(discountNum) && discountNum >= 0 && discountNum + couponDiscount <= subtotal;
   const discount = discountValid ? discountNum : 0;
-  const total = deliveryFee !== null ? subtotal - discount + deliveryFee : null;
+  const total = deliveryFee !== null ? subtotal - couponDiscount - discount + deliveryFee : null;
+
+  const validateCoupon = async (code: string, forSubtotal: number) => {
+    setCouponLoading(true);
+    setCouponError(null);
+    try {
+      const res = await api.post<{ code: string; discount: string }>("/coupons/validate", {
+        code,
+        subtotal: forSubtotal,
+      });
+      setCoupon({ code: res.data.code, discount: Number(res.data.discount) });
+    } catch (err) {
+      setCoupon(null);
+      setCouponError(err instanceof ApiError ? err.message : "Could not check this coupon.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+  const applyCoupon = () => {
+    const code = couponInput.trim();
+    if (code.length < 3 || !hasItems) return;
+    void validateCoupon(code, subtotal);
+  };
+  const removeCoupon = () => {
+    setCoupon(null);
+    setCouponInput("");
+    setCouponError(null);
+  };
+  // Percent coupons and minimum-subtotal rules depend on the cart, so re-price
+  // the applied coupon whenever the subtotal changes.
+  const appliedCode = coupon?.code;
+  useEffect(() => {
+    if (!appliedCode) return;
+    if (subtotal <= 0) {
+      setCoupon(null);
+      return;
+    }
+    void validateCoupon(appliedCode, subtotal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal]);
 
   const phoneValid = BD_PHONE.test(phone.trim());
   const addressValid = address.trim().length >= 5;
-  const hasItems = lines.length + customLines.length > 0;
-  const canSubmit = hasItems && fullName.trim().length >= 2 && phoneValid && addressValid && Boolean(zone) && discountValid;
+  const canSubmit =
+    hasItems &&
+    fullName.trim().length >= 2 &&
+    phoneValid &&
+    addressValid &&
+    Boolean(zone) &&
+    discountValid &&
+    !couponLoading;
 
   const submit = async () => {
     setError(null);
@@ -138,6 +203,7 @@ export default function ManualOrderPage() {
         deliveryZone: zone,
         freeDelivery,
         discount,
+        ...(coupon ? { couponCode: coupon.code } : {}),
         status,
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
         customItems: customLines.map((l) => ({ title: l.title, price: l.price, quantity: l.quantity })),
@@ -325,31 +391,24 @@ export default function ManualOrderPage() {
 
           <div>
             <label className="mb-1.5 block text-sm font-medium">Select Delivery Option</label>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {ZONES.map((z) => (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {DELIVERY_OPTIONS.map((d) => (
                 <button
-                  key={z.zone}
+                  key={d.option}
                   type="button"
-                  onClick={() => setZone(z.zone)}
-                  className={`rounded-lg border p-2.5 text-left text-sm transition-colors ${
-                    zone === z.zone ? "border-primary bg-primary-light" : "border-border hover:border-primary/50"
+                  onClick={() => setDeliveryOption(d.option)}
+                  aria-pressed={deliveryOption === d.option}
+                  className={`cursor-pointer rounded-lg border p-2.5 text-left text-sm transition-colors ${
+                    deliveryOption === d.option
+                      ? "border-primary bg-primary-light"
+                      : "border-border hover:border-primary/50"
                   }`}
                 >
-                  {z.label}
+                  <span className="block font-medium">{d.label}</span>
+                  <span className="block text-xs text-muted">{d.detail}</span>
                 </button>
               ))}
             </div>
-            {/* Zone stays selected (it sets the delivery estimate); this only
-                waives the fee for this one order. */}
-            <label className="mt-2 flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={freeDelivery}
-                onChange={(e) => setFreeDelivery(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              Free delivery {selectedZone && !freeDelivery ? `(waive ৳${selectedZone.fee})` : "(৳0 delivery fee)"}
-            </label>
           </div>
 
           <div>
@@ -370,8 +429,59 @@ export default function ManualOrderPage() {
               <p className="mt-1 text-xs text-primary">
                 {discountNum < 0 || !Number.isFinite(discountNum)
                   ? "Enter a valid amount"
-                  : `Can't exceed the product subtotal (${formatPrice(subtotal)})`}
+                  : couponDiscount > 0
+                    ? `Discount plus coupon can't exceed the product subtotal (${formatPrice(subtotal)})`
+                    : `Can't exceed the product subtotal (${formatPrice(subtotal)})`}
               </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="manual-coupon" className="mb-1.5 block text-sm font-medium">
+              Coupon
+            </label>
+            {coupon ? (
+              <div className="flex h-10 items-center justify-between rounded-lg border border-primary bg-primary-light px-3 text-sm">
+                <span>
+                  <span className="font-mono font-semibold text-primary">{coupon.code}</span>
+                  <span className="ml-2 text-muted">
+                    {couponLoading ? "Checking…" : `−${formatPrice(coupon.discount)}`}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  className="cursor-pointer text-sm font-medium text-muted hover:text-primary"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  id="manual-coupon"
+                  value={couponInput}
+                  onChange={(e) => {
+                    setCouponInput(e.target.value.toUpperCase());
+                    setCouponError(null);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+                  placeholder="Coupon code"
+                  className={`${inputClass} font-mono uppercase`}
+                />
+                <button
+                  type="button"
+                  onClick={applyCoupon}
+                  disabled={couponLoading || couponInput.trim().length < 3 || !hasItems}
+                  className="shrink-0 cursor-pointer rounded-lg border border-primary px-4 text-sm font-medium text-primary hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                >
+                  {couponLoading ? "Checking…" : "Apply"}
+                </button>
+              </div>
+            )}
+            {couponError && <p className="mt-1 text-xs text-primary">{couponError}</p>}
+            {!coupon && !hasItems && couponInput.trim() && (
+              <p className="mt-1 text-xs text-muted">Add products before applying a coupon.</p>
             )}
           </div>
 
@@ -401,6 +511,12 @@ export default function ManualOrderPage() {
           <p className="text-muted">
             Subtotal: <span className="font-semibold text-foreground">{formatPrice(subtotal)}</span>
           </p>
+          {coupon && couponDiscount > 0 && (
+            <p className="text-muted">
+              Coupon ({coupon.code}):{" "}
+              <span className="font-semibold text-primary">−{formatPrice(couponDiscount)}</span>
+            </p>
+          )}
           {discount > 0 && (
             <p className="text-muted">
               Discount: <span className="font-semibold text-primary">−{formatPrice(discount)}</span>

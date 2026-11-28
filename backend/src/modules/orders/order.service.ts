@@ -61,7 +61,6 @@ async function buildAndInsertOrder(
     freeDelivery?: boolean;
     // Flat admin discount (manual orders only); customer checkout never sets it.
     discount?: number;
-    couponCode?: string;
     customItems?: CustomOrderItem[];
   },
   status: OrderStatus = "pending",
@@ -105,6 +104,8 @@ async function buildAndInsertOrder(
       productId: product.id as string | null,
       title: product.title,
       price: money(variant.unitPrice),
+      // Widened to null for custom lines, which have no regular price.
+      regularPrice: money(Number(product.basePrice)) as string | null,
       imageUrl: mainImages.get(product.id) ?? null,
     };
     const lines = [];
@@ -122,6 +123,7 @@ async function buildAndInsertOrder(
       productId: null,
       title: custom.title,
       price: money(custom.price),
+      regularPrice: null,
       imageUrl: null,
       quantity: custom.quantity,
       isPreOrder: false,
@@ -145,13 +147,19 @@ async function buildAndInsertOrder(
   // discounted, and the free-delivery threshold above is judged on the
   // pre-discount subtotal (a coupon never makes delivery cost money).
   const applied = input.couponCode ? await couponService.resolveForOrder(input.couponCode, subtotal) : null;
-  // Manual orders carry an admin-typed flat discount instead (same rule: items
-  // only, judged after the free-delivery decision).
+  const couponDiscount = applied?.discount ?? 0;
+  // Manual orders may also carry an admin-typed flat discount, on top of any
+  // coupon (same rule: items only, judged after the free-delivery decision).
+  // Together they can never exceed the item subtotal.
   const manualDiscount = Math.round((input.discount ?? 0) * 100) / 100;
-  if (manualDiscount > subtotal) {
-    throw ApiError.badRequest("Discount can't be more than the product subtotal.");
+  if (couponDiscount + manualDiscount > subtotal) {
+    throw ApiError.badRequest(
+      couponDiscount > 0
+        ? "Discount plus coupon can't be more than the product subtotal."
+        : "Discount can't be more than the product subtotal."
+    );
   }
-  const discount = (applied?.discount ?? 0) + manualDiscount;
+  const discount = couponDiscount + manualDiscount;
   const total = subtotal - discount + fee;
 
   const isBkash = input.paymentMethod === "bkash";
@@ -177,6 +185,7 @@ async function buildAndInsertOrder(
       deliveryEstimate: estimate,
       subtotal: money(subtotal),
       couponCode: applied?.coupon.code ?? null,
+      couponDiscount: applied ? money(couponDiscount) : null,
       discount: money(discount),
       total: money(total),
       status,

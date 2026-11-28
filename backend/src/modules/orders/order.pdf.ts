@@ -172,7 +172,33 @@ function drawThumb(doc: PDFKit.PDFDocument, image: Buffer | null | undefined, x:
   doc.lineWidth(1);
 }
 
-/** Items table: primary-filled header row, then one bordered row per line. */
+/**
+ * Regular vs offer price for a line. `regularPrice` is the product's base price
+ * snapshotted at order time; when it's above the price actually charged, the
+ * line was on offer. Custom lines and older rows have no snapshot, so they show
+ * the charged price as the regular price with no offer.
+ */
+function linePrices(item: Order["items"][number]) {
+  const charged = parseFloat(item.price);
+  const regular = item.regularPrice != null ? parseFloat(item.regularPrice) : charged;
+  const onOffer = regular > charged;
+  return { regular, offer: onOffer ? charged : null, charged };
+}
+
+/** Total saved through offer prices across the order (0 when nothing was on offer). */
+function offerSavings(order: Order) {
+  return order.items.reduce((sum, item) => {
+    const { regular, offer } = linePrices(item);
+    return offer != null ? sum + (regular - offer) * item.quantity : sum;
+  }, 0);
+}
+
+/**
+ * Items table: primary-filled header row, then one bordered row per line.
+ * Columns: Product (thumb + title) | Qty | Regular Price | Offer Price | Total.
+ * An offer line shows its regular price struck through beside the offer price;
+ * a full-price line shows the regular price and a dash for the offer.
+ */
 function drawItemsTable(
   doc: PDFKit.PDFDocument,
   order: Order,
@@ -183,43 +209,57 @@ function drawItemsTable(
   // Thumbnail sits in the Product column, left of the title.
   const TITLE_X = LEFT + PAD + THUMB + 10;
   const columns = [
-    { label: "Product", x: LEFT + PAD, width: 249 },
-    { label: "Qty", x: LEFT + 265 + PAD, width: 39 },
-    { label: "Price", x: LEFT + 320 + PAD, width: 69 },
-    { label: "Total", x: LEFT + 405 + PAD, width: 74 },
+    { label: "Product", x: LEFT + PAD, width: 192, align: "left" as const },
+    { label: "Qty", x: LEFT + 205, width: 35, align: "center" as const },
+    { label: "Regular Price", x: LEFT + 248, width: 77, align: "right" as const },
+    { label: "Offer Price", x: LEFT + 333, width: 72, align: "right" as const },
+    { label: "Total", x: LEFT + 413, width: 74, align: "right" as const },
   ];
-  const alignFor = (index: number): "left" | "center" | "right" =>
-    index === 0 ? "left" : index === 1 ? "center" : "right";
+  const [productCol, qtyCol, regularCol, offerCol, totalCol] = columns;
 
   // Header row — brand background, white text.
   const headerHeight = 26;
   doc.rect(LEFT, top, CONTENT_WIDTH, headerHeight).fill(PRIMARY);
-  doc.fillColor(WHITE).font(BOLD).fontSize(10);
-  columns.forEach((col, index) => {
-    doc.text(col.label, col.x, top + 8, { width: col.width, align: alignFor(index) });
+  doc.fillColor(WHITE).font(BOLD).fontSize(9.5);
+  columns.forEach((col) => {
+    doc.text(col.label, col.x, top + 8.5, { width: col.width, align: col.align, lineBreak: false });
   });
 
   let y = top + headerHeight;
 
-  order.items.forEach((item) => {
-    const lineTotal = parseFloat(item.price) * item.quantity;
+  order.items.forEach((item, rowIndex) => {
+    const { regular, offer, charged } = linePrices(item);
+    const lineTotal = charged * item.quantity;
     const label = item.isPreOrder ? `${item.title}  [PRE-ORDER]` : item.title;
 
     doc.font(BODY).fontSize(10);
-    const titleWidth = columns[0].x + columns[0].width - TITLE_X;
+    const titleWidth = productCol.x + productCol.width - TITLE_X;
     const titleHeight = doc.heightOfString(label, { width: titleWidth });
     const rowHeight = Math.max(titleHeight, THUMB) + PAD * 2;
     // Single-line cells are vertically centred in the row.
     const textY = y + (rowHeight - doc.currentLineHeight()) / 2;
 
+    // Zebra striping keeps wide rows easy to follow across five columns.
+    if (rowIndex % 2 === 1) doc.rect(LEFT, y, CONTENT_WIDTH, rowHeight).fill("#faf9f8");
+
     drawThumb(doc, item.imageUrl ? images.get(item.imageUrl) : null, LEFT + PAD, y + (rowHeight - THUMB) / 2);
 
     doc.fillColor(INK).font(BODY).fontSize(10);
     doc.text(label, TITLE_X, y + (rowHeight - titleHeight) / 2, { width: titleWidth });
-    const cells = [String(item.quantity), taka(item.price), taka(lineTotal)];
-    columns.slice(1).forEach((col, index) => {
-      doc.text(cells[index], col.x, textY, { width: col.width, align: alignFor(index + 1) });
-    });
+    doc.text(String(item.quantity), qtyCol.x, textY, { width: qtyCol.width, align: qtyCol.align });
+
+    // Regular price: struck through and muted when an offer replaced it.
+    doc
+      .fillColor(offer != null ? MUTED : INK)
+      .text(taka(regular), regularCol.x, textY, { width: regularCol.width, align: "right", strike: offer != null });
+
+    if (offer != null) {
+      doc.fillColor(PRIMARY).font(BOLD).text(taka(offer), offerCol.x, textY, { width: offerCol.width, align: "right" });
+    } else {
+      doc.fillColor(MUTED).font(BODY).text("—", offerCol.x, textY, { width: offerCol.width, align: "right" });
+    }
+
+    doc.fillColor(INK).font(BOLD).text(taka(lineTotal), totalCol.x, textY, { width: totalCol.width, align: "right" });
 
     y += rowHeight;
     doc.moveTo(LEFT, y).lineTo(RIGHT, y).strokeColor(BORDER).stroke();
@@ -228,6 +268,19 @@ function drawItemsTable(
   // Outer frame drawn last so it sits on top of the row fills.
   doc.rect(LEFT, top, CONTENT_WIDTH, y - top).strokeColor(BORDER).stroke();
   doc.y = y;
+
+  // Savings note under the table, only when something was on offer.
+  const saved = offerSavings(order);
+  if (saved > 0) {
+    doc
+      .font(BODY)
+      .fontSize(9)
+      .fillColor(PRIMARY)
+      .text(`You saved ${taka(saved)} with offer prices on this order.`, LEFT, y + 6, {
+        width: CONTENT_WIDTH,
+        align: "right",
+      });
+  }
 }
 
 /**
@@ -329,9 +382,20 @@ export async function streamOrderPdf(order: Order, stream: NodeJS.WritableStream
   if (Number(order.discount) > 0) {
     // Long codes would collide with the value column, so clip them.
     const code = order.couponCode && order.couponCode.length > 14 ? `${order.couponCode.slice(0, 13)}…` : order.couponCode;
-    totalsRow(`Discount${code ? ` (${code})` : ""}`, `- ${taka(order.discount)}`);
+    if (code && order.couponDiscount != null) {
+      // Coupon and flat admin discount (manual orders) as separate lines.
+      const couponAmount = Number(order.couponDiscount);
+      const otherAmount = Number(order.discount) - couponAmount;
+      if (couponAmount > 0) totalsRow(`Coupon (${code})`, `- ${taka(couponAmount)}`);
+      if (otherAmount > 0) totalsRow("Discount", `- ${taka(otherAmount)}`);
+    } else {
+      // Older rows only stored the combined discount.
+      totalsRow(`Discount${code ? ` (${code})` : ""}`, `- ${taka(order.discount)}`);
+    }
   }
-  totalsRow(`Delivery (${zoneLabel(order.deliveryZone)})`, taka(order.deliveryFee));
+  // A waived fee (free delivery) reads "Free" rather than a zone and Tk 0.
+  if (Number(order.deliveryFee) === 0) totalsRow("Delivery", "Free");
+  else totalsRow(`Delivery (${zoneLabel(order.deliveryZone)})`, taka(order.deliveryFee));
   totalsRow("Total", taka(order.total), true);
 
   // ---- Closing note (bottom) ----

@@ -149,6 +149,8 @@ export interface Order {
   /** Coupon snapshot — code as applied and the server-computed discount ("0.00" when none). */
   couponCode: string | null;
   discount: string;
+  /** The coupon's share of `discount`; the rest is a flat admin discount (manual orders). Null on older rows. */
+  couponDiscount: string | null;
   total: string;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
