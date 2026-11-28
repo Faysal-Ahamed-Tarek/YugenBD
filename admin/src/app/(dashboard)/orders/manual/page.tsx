@@ -47,6 +47,8 @@ export default function ManualOrderPage() {
   const [zone, setZone] = useState<"inside_dhaka" | "outside_dhaka" | null>(null);
   // Per-order delivery-fee waiver — the backend honours this regardless of zone.
   const [freeDelivery, setFreeDelivery] = useState(false);
+  // Flat ৳ discount off the product subtotal (never the delivery fee).
+  const [discountInput, setDiscountInput] = useState("");
   const [status, setStatus] = useState<OrderStatus>("confirmed");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -114,12 +116,15 @@ export default function ManualOrderPage() {
   );
   const selectedZone = ZONES.find((z) => z.zone === zone);
   const deliveryFee = freeDelivery ? 0 : selectedZone?.fee ?? null;
-  const total = deliveryFee !== null ? subtotal + deliveryFee : null;
+  const discountNum = discountInput.trim() === "" ? 0 : Number(discountInput);
+  const discountValid = Number.isFinite(discountNum) && discountNum >= 0 && discountNum <= subtotal;
+  const discount = discountValid ? discountNum : 0;
+  const total = deliveryFee !== null ? subtotal - discount + deliveryFee : null;
 
   const phoneValid = BD_PHONE.test(phone.trim());
   const addressValid = address.trim().length >= 5;
   const hasItems = lines.length + customLines.length > 0;
-  const canSubmit = hasItems && fullName.trim().length >= 2 && phoneValid && addressValid && Boolean(zone);
+  const canSubmit = hasItems && fullName.trim().length >= 2 && phoneValid && addressValid && Boolean(zone) && discountValid;
 
   const submit = async () => {
     setError(null);
@@ -132,6 +137,7 @@ export default function ManualOrderPage() {
         address: address.trim(),
         deliveryZone: zone,
         freeDelivery,
+        discount,
         status,
         items: lines.map((l) => ({ productId: l.product.id, quantity: l.quantity })),
         customItems: customLines.map((l) => ({ title: l.title, price: l.price, quantity: l.quantity })),
@@ -347,6 +353,29 @@ export default function ManualOrderPage() {
           </div>
 
           <div>
+            <label htmlFor="manual-discount" className="mb-1.5 block text-sm font-medium">
+              Discount (৳)
+            </label>
+            <input
+              id="manual-discount"
+              type="number"
+              min={0}
+              max={subtotal}
+              value={discountInput}
+              onChange={(e) => setDiscountInput(e.target.value)}
+              placeholder="0"
+              className={inputClass}
+            />
+            {!discountValid && (
+              <p className="mt-1 text-xs text-primary">
+                {discountNum < 0 || !Number.isFinite(discountNum)
+                  ? "Enter a valid amount"
+                  : `Can't exceed the product subtotal (${formatPrice(subtotal)})`}
+              </p>
+            )}
+          </div>
+
+          <div>
             <label className="mb-1.5 block text-sm font-medium">Status</label>
             <select
               value={status}
@@ -372,6 +401,11 @@ export default function ManualOrderPage() {
           <p className="text-muted">
             Subtotal: <span className="font-semibold text-foreground">{formatPrice(subtotal)}</span>
           </p>
+          {discount > 0 && (
+            <p className="text-muted">
+              Discount: <span className="font-semibold text-primary">−{formatPrice(discount)}</span>
+            </p>
+          )}
           <p className="text-muted">
             Delivery:{" "}
             <span className="font-semibold text-foreground">
